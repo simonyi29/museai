@@ -51,6 +51,7 @@ function getExtraBinaryPaths(): string[] {
     if (localAppData) {
       paths.push(path.join(localAppData, 'Programs', 'nodejs'));
       paths.push(path.join(localAppData, 'Programs', 'node'));
+      paths.push(path.join(localAppData, 'OpenAI', 'Codex', 'bin'));
     }
 
     // Common program locations (official Node.js installer)

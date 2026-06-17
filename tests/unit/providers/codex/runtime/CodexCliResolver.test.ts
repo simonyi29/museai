@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 
 import { CodexCliResolver } from '@/providers/codex/runtime/CodexCliResolver';
 import { getHostnameKey } from '@/utils/env';
@@ -54,19 +55,54 @@ describe('CodexCliResolver', () => {
   });
 
   it('auto-detects from the runtime PATH when no configured path is valid', () => {
-    mockedExists.mockImplementation((filePath: string) => filePath === '/custom/bin/codex');
+    const binaryName = process.platform === 'win32' ? 'codex.exe' : 'codex';
+    const binaryDir = '/custom/bin';
+    const binaryPath = path.join(binaryDir, binaryName);
+
+    mockedExists.mockImplementation((filePath: string) => filePath === binaryPath);
     mockedStat.mockImplementation((filePath: string) => ({
-      isFile: () => filePath === '/custom/bin/codex',
+      isFile: () => filePath === binaryPath,
     }));
 
     const resolver = new CodexCliResolver();
     const resolved = resolver.resolve(
       { 'other-host': '/other/codex' },
       '',
-      'PATH=/custom/bin',
+      `PATH=${binaryDir}`,
     );
 
-    expect(resolved).toBe('/custom/bin/codex');
+    expect(resolved).toBe(binaryPath);
+  });
+
+  it('refreshes the cached path when the previously resolved executable disappears', () => {
+    const oldPath = 'C:\\Users\\me\\AppData\\Local\\OpenAI\\Codex\\bin\\old\\codex.exe';
+    const newPath = 'C:\\Users\\me\\AppData\\Local\\OpenAI\\Codex\\bin\\codex.exe';
+    const newPathDir = 'C:\\Users\\me\\AppData\\Local\\OpenAI\\Codex\\bin';
+
+    mockedExists.mockImplementation((filePath: string) => filePath === oldPath);
+    mockedStat.mockImplementation((filePath: string) => ({
+      isFile: () => filePath === oldPath,
+    }));
+
+    const resolver = new CodexCliResolver();
+    const settings = {
+      providerConfigs: {
+        codex: {
+          cliPath: oldPath,
+          cliPathsByHost: {},
+          environmentVariables: `PATH=${newPathDir}`,
+        },
+      },
+    };
+
+    expect(resolver.resolveFromSettings(settings)).toBe(oldPath);
+
+    mockedExists.mockImplementation((filePath: string) => filePath === newPath);
+    mockedStat.mockImplementation((filePath: string) => ({
+      isFile: () => filePath === newPath,
+    }));
+
+    expect(resolver.resolveFromSettings(settings)).toBe(newPath);
   });
 
   it('returns a Linux-side command in WSL mode without host filesystem validation', () => {

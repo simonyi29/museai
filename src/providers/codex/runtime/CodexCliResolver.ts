@@ -1,9 +1,10 @@
 import { getRuntimeEnvironmentText } from '../../../core/providers/providerEnvironment';
 import type { HostnameCliPaths } from '../../../core/types/settings';
+import { isExistingFile } from '../../../utils/cliBinaryLocator';
 import { getHostnameKey } from '../../../utils/env';
 import type { CodexInstallationMethod } from '../settings';
 import { getCodexProviderSettings } from '../settings';
-import { resolveCodexCliPath } from './CodexBinaryLocator';
+import { isWindowsStyleCliReference, resolveCodexCliPath } from './CodexBinaryLocator';
 
 export class CodexCliResolver {
   private resolvedPath: string | null = null;
@@ -12,6 +13,19 @@ export class CodexCliResolver {
   private lastEnvText = '';
   private lastInstallationMethod = '';
   private readonly cachedHostname = getHostnameKey();
+
+  private canReuseResolvedPath(installationMethod: CodexInstallationMethod): boolean {
+    const resolvedPath = this.resolvedPath?.trim();
+    if (!resolvedPath) {
+      return false;
+    }
+
+    if (process.platform === 'win32' && installationMethod === 'wsl') {
+      return !isWindowsStyleCliReference(resolvedPath) || isExistingFile(resolvedPath);
+    }
+
+    return isExistingFile(resolvedPath);
+  }
 
   resolveFromSettings(settings: Record<string, unknown>): string | null {
     const codexSettings = getCodexProviderSettings(settings);
@@ -22,6 +36,7 @@ export class CodexCliResolver {
 
     if (
       this.resolvedPath &&
+      this.canReuseResolvedPath(installationMethod) &&
       hostnamePath === this.lastHostnamePath &&
       legacyPath === this.lastLegacyPath &&
       envText === this.lastEnvText &&

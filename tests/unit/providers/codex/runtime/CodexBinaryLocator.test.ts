@@ -9,6 +9,8 @@ import {
 
 describe('CodexBinaryLocator', () => {
   let tempDir: string;
+  const itOnNonWindows = process.platform === 'win32' ? it.skip : it;
+  const itOnWindows = process.platform === 'win32' ? it : it.skip;
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-binary-locator-'));
@@ -18,7 +20,7 @@ describe('CodexBinaryLocator', () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('finds a codex executable on PATH', () => {
+  itOnNonWindows('finds a codex executable on PATH', () => {
     const pathDir = path.join(tempDir, 'bin');
     const pathBinary = path.join(pathDir, 'codex');
     fs.mkdirSync(pathDir, { recursive: true });
@@ -34,6 +36,26 @@ describe('CodexBinaryLocator', () => {
     fs.writeFileSync(pathBinary, '');
 
     expect(findCodexBinaryPath(pathDir, 'win32')).toBe(pathBinary);
+  });
+
+  itOnWindows('finds the Codex desktop binary under LOCALAPPDATA on Windows', () => {
+    const previousLocalAppData = process.env.LOCALAPPDATA;
+    const codexDir = path.join(tempDir, 'OpenAI', 'Codex', 'bin');
+    const codexBinary = path.join(codexDir, 'codex.exe');
+
+    fs.mkdirSync(codexDir, { recursive: true });
+    fs.writeFileSync(codexBinary, '');
+    process.env.LOCALAPPDATA = tempDir;
+
+    try {
+      expect(findCodexBinaryPath(undefined, 'win32')).toBe(codexBinary);
+    } finally {
+      if (previousLocalAppData === undefined) {
+        delete process.env.LOCALAPPDATA;
+      } else {
+        process.env.LOCALAPPDATA = previousLocalAppData;
+      }
+    }
   });
 
   it('prefers a hostname-specific configured path', () => {
