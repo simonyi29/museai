@@ -1,0 +1,5 @@
+data.json
+data.json.bak-*
+*.bak-*
+.DS_Store
+Thumbs.db
