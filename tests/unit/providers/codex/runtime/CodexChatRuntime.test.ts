@@ -1441,14 +1441,26 @@ describe('CodexChatRuntime', () => {
       rt.cleanup();
     });
 
-    it('sends serviceTier null on turn/start when fast mode is disabled', async () => {
+    it('sends serviceTier flex when fast mode is disabled', async () => {
+      const plugin = createMockPlugin({ serviceTier: 'flex' });
+      const rt = new CodexChatRuntime(plugin);
+
+      await collectChunks(rt.query(createTurn()));
+
+      const turnStartCall = findCall('turn/start');
+      expect(turnStartCall[1].serviceTier).toBe('flex');
+
+      rt.cleanup();
+    });
+
+    it('maps legacy default serviceTier to flex', async () => {
       const plugin = createMockPlugin({ serviceTier: 'default' });
       const rt = new CodexChatRuntime(plugin);
 
       await collectChunks(rt.query(createTurn()));
 
       const turnStartCall = findCall('turn/start');
-      expect(turnStartCall[1].serviceTier).toBeNull();
+      expect(turnStartCall[1].serviceTier).toBe('flex');
 
       rt.cleanup();
     });

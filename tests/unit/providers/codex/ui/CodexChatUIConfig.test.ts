@@ -208,4 +208,19 @@ describe('CodexChatUIConfig', () => {
       });
     });
   });
+
+  describe('getServiceTierToggle', () => {
+    it('uses flex as the inactive Codex service tier', () => {
+      const toggle = codexChatUIConfig.getServiceTierToggle!({
+        model: DEFAULT_CODEX_PRIMARY_MODEL,
+      });
+
+      expect(toggle).toMatchObject({
+        inactiveValue: 'flex',
+        inactiveLabel: 'Standard',
+        activeValue: 'fast',
+        activeLabel: 'Fast',
+      });
+    });
+  });
 });

@@ -1,3 +1,7 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import type { ProviderId } from '../../../core/providers/types';
 import type ClaudianPlugin from '../../../main';
 import { getEnhancedPath, parseEnvironmentVariables } from '../../../utils/env';
@@ -11,6 +15,36 @@ const CODEX_APP_SERVER_CLIENT_INFO = Object.freeze({
   name: 'museai',
   version: '1.0.0',
 });
+
+function getCodexConfigPath(env: Record<string, string | undefined>): string {
+  const codexHome = env.CODEX_HOME?.trim() || path.join(os.homedir(), '.codex');
+  return path.join(codexHome, 'config.toml');
+}
+
+export function normalizeLegacyCodexConfigServiceTier(
+  env: Record<string, string | undefined> = process.env,
+): void {
+  const configPath = getCodexConfigPath(env);
+
+  try {
+    if (!fs.existsSync(configPath)) {
+      return;
+    }
+
+    const original = fs.readFileSync(configPath, 'utf8');
+    const next = original.replace(
+      /^(\s*service_tier\s*=\s*)(["'])default\2(\s*(?:#.*)?)$/gm,
+      (_match, prefix: string, _quote: string, suffix: string) => `${prefix}"flex"${suffix}`,
+    );
+
+    if (next !== original) {
+      fs.writeFileSync(configPath, next, 'utf8');
+    }
+  } catch {
+    // Best effort: an unreadable Codex config should not prevent MuseAI from
+    // showing the original Codex startup error.
+  }
+}
 
 export function getCodexAppServerWorkingDirectory(plugin: ClaudianPlugin): string {
   return getVaultPath(plugin.app) ?? process.cwd();
@@ -26,11 +60,15 @@ export function buildCodexAppServerEnvironment(
   );
   const enhancedPath = getEnhancedPath(customEnv.PATH);
 
-  return {
+  const env = {
     ...baseEnv,
     ...customEnv,
     PATH: enhancedPath,
   };
+
+  normalizeLegacyCodexConfigServiceTier(env);
+
+  return env;
 }
 
 export function resolveCodexAppServerLaunchSpec(

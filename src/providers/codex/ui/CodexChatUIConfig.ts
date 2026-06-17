@@ -32,7 +32,7 @@ const CODEX_PERMISSION_MODE_TOGGLE: ProviderPermissionModeToggleConfig = {
 };
 
 const CODEX_SERVICE_TIER_TOGGLE: ProviderServiceTierToggleConfig = {
-  inactiveValue: 'default',
+  inactiveValue: 'flex',
   inactiveLabel: 'Standard',
   activeValue: 'fast',
   activeLabel: 'Fast',
