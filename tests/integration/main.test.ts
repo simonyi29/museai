@@ -107,9 +107,19 @@ describe('ClaudianPlugin', () => {
 
       expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
         id: 'open-view',
-        name: 'Open chat view',
+        name: 'Open MuseAI',
         callback: expect.any(Function),
       });
+    });
+
+    it('should register discoverable MuseAI command names', async () => {
+      await plugin.onload();
+
+      expect(getRegisteredCommand('open-view').name).toBe('Open MuseAI');
+      expect(getRegisteredCommand('inline-edit').name).toBe('MuseAI: Inline edit');
+      expect(getRegisteredCommand('new-tab').name).toBe('MuseAI: New tab');
+      expect(getRegisteredCommand('new-session').name).toBe('MuseAI: New session in current tab');
+      expect(getRegisteredCommand('close-current-tab').name).toBe('MuseAI: Close current tab');
     });
 
   });

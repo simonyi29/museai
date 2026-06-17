@@ -68,7 +68,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'open-view',
-      name: 'Open chat view',
+      name: 'Open MuseAI',
       callback: () => {
         void this.activateView();
       },
@@ -76,7 +76,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'inline-edit',
-      name: 'Inline edit',
+      name: 'MuseAI: Inline edit',
       editorCallback: async (editor: Editor, ctx) => {
         const view = ctx instanceof MarkdownView
           ? ctx
@@ -122,7 +122,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'new-tab',
-      name: 'New tab',
+      name: 'MuseAI: New tab',
       checkCallback: (checking: boolean) => {
         if (!this.canCreateNewTab()) return false;
 
@@ -135,7 +135,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'new-session',
-      name: 'New session (in current tab)',
+      name: 'MuseAI: New session in current tab',
       checkCallback: (checking: boolean) => {
         const view = this.getView();
         if (!view) return false;
@@ -157,7 +157,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'close-current-tab',
-      name: 'Close current tab',
+      name: 'MuseAI: Close current tab',
       checkCallback: (checking: boolean) => {
         const view = this.getView();
         if (!view) return false;
