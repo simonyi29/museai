@@ -94,7 +94,7 @@ function resolveCodexServiceTier(serviceTier: unknown, model: string | undefined
   if (model !== FAST_TIER_CODEX_MODEL) {
     return null;
   }
-  return serviceTier === 'fast' ? 'fast' : 'flex';
+  return serviceTier === 'fast' ? 'fast' : null;
 }
 
 const EFFORT_MAP: Record<string, string> = {
