@@ -7,6 +7,7 @@ import type {
 } from '../../../core/providers/types';
 import { OPENAI_PROVIDER_ICON } from '../../../shared/icons';
 import { getCodexModelOptions } from '../modelOptions';
+import { getCodexContextWindow } from '../runtime/CodexSessionFileTail';
 import { applyCodexModelDefaults } from '../settings';
 import {
   DEFAULT_CODEX_MODEL_SET,
@@ -39,8 +40,6 @@ const CODEX_SERVICE_TIER_TOGGLE: ProviderServiceTierToggleConfig = {
   description: FAST_TIER_CODEX_DESCRIPTION,
 };
 
-const DEFAULT_CONTEXT_WINDOW = 200_000;
-
 function looksLikeCodexModel(model: string): boolean {
   return /^gpt-/i.test(model) || /^o\d/i.test(model);
 }
@@ -70,8 +69,8 @@ export const codexChatUIConfig: ProviderChatUIConfig = {
     return 'medium';
   },
 
-  getContextWindowSize(): number {
-    return DEFAULT_CONTEXT_WINDOW;
+  getContextWindowSize(model: string): number {
+    return getCodexContextWindow(model);
   },
 
   isDefaultModel(model: string): boolean {

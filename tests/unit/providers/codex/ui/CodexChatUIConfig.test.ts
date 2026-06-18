@@ -127,8 +127,9 @@ describe('CodexChatUIConfig', () => {
   });
 
   describe('getContextWindowSize', () => {
-    it('should return 200000 for all models', () => {
+    it('returns the configured context window for built-in models', () => {
       expect(codexChatUIConfig.getContextWindowSize(DEFAULT_CODEX_PRIMARY_MODEL)).toBe(200_000);
+      expect(codexChatUIConfig.getContextWindowSize(CODEX_SPARK_MODEL)).toBe(128_000);
     });
   });
 
