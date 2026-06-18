@@ -3513,8 +3513,43 @@ describe('Tab - Blank Tab Model Selector', () => {
   });
 });
 
-describe('Tab - Cross-Provider Model Rejection', () => {
-  it('rejects cross-provider model change on bound tab via toolbar onModelChange', async () => {
+describe('Tab - Cross-Provider Model Switching', () => {
+  it('keeps mixed-provider model options visible on bound tabs', () => {
+    jest.spyOn(ProviderRegistry, 'createInstructionRefineService').mockReturnValue({ cancel: jest.fn(), resetConversation: jest.fn() } as any);
+    jest.spyOn(ProviderRegistry, 'createTitleGenerationService').mockReturnValue({ cancel: jest.fn() } as any);
+    jest.spyOn(ProviderRegistry, 'getTaskResultInterpreter').mockReturnValue({} as any);
+
+    const plugin = createMockPlugin();
+    const tab = createTab(createMockOptions({
+      plugin,
+      conversation: {
+        id: 'conv-claude-bound-picker',
+        providerId: 'claude',
+        title: 'Claude conversation',
+        messages: [],
+        sessionId: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    }));
+    initializeTabUI(tab, plugin);
+
+    const toolbarModule = jest.requireMock('@/features/chat/ui/InputToolbar') as {
+      createInputToolbar: jest.Mock;
+    };
+    const toolbarCallbacks = toolbarModule.createInputToolbar.mock.calls.at(-1)?.[1];
+
+    const modelValues = toolbarCallbacks
+      .getUIConfig()
+      .getModelOptions(plugin.settings)
+      .map((model: { value: string }) => model.value);
+
+    expect(modelValues).toContain('sonnet');
+    expect(modelValues).toContain(DEFAULT_CODEX_PRIMARY_MODEL);
+  });
+
+  it('starts a new same-tab draft session for cross-provider model changes on bound tabs', async () => {
+    (Notice as unknown as jest.Mock).mockClear();
     jest.spyOn(ProviderRegistry, 'createInstructionRefineService').mockReturnValue({ cancel: jest.fn(), resetConversation: jest.fn() } as any);
     jest.spyOn(ProviderRegistry, 'createTitleGenerationService').mockReturnValue({ cancel: jest.fn() } as any);
     jest.spyOn(ProviderRegistry, 'getTaskResultInterpreter').mockReturnValue({} as any);
@@ -3535,13 +3570,14 @@ describe('Tab - Cross-Provider Model Rejection', () => {
     const toolbarCallbacks = toolbarModule.createInputToolbar.mock.calls.at(-1)?.[1];
     expect(toolbarCallbacks).toBeDefined();
 
-    // Attempt cross-provider model change (Claude -> Codex)
     await toolbarCallbacks.onModelChange(DEFAULT_CODEX_PRIMARY_MODEL);
 
-    // Should show a Notice rejecting it
-    expect(Notice).toHaveBeenCalledWith(expect.stringContaining('Cannot switch provider'));
-    // Provider should remain Claude
-    expect(tab.providerId).toBe('claude');
+    expect(Notice).not.toHaveBeenCalledWith(expect.stringContaining('Cannot switch provider'));
+    expect(tab.lifecycleState).toBe('blank');
+    expect(tab.conversationId).toBeNull();
+    expect(tab.draftModel).toBe(DEFAULT_CODEX_PRIMARY_MODEL);
+    expect(tab.providerId).toBe('codex');
+    expect(plugin.saveSettings).toHaveBeenCalled();
   });
 
   it('allows same-provider model change on bound tab', async () => {

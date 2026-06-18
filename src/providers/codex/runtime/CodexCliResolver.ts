@@ -2,6 +2,8 @@ import { getRuntimeEnvironmentText } from '../../../core/providers/providerEnvir
 import type { HostnameCliPaths } from '../../../core/types/settings';
 import { isExistingFile } from '../../../utils/cliBinaryLocator';
 import { getHostnameKey } from '../../../utils/env';
+import { getCodexDeepSeekProviderSettings } from '../../codex-deepseek/settings';
+import { CODEX_DEEPSEEK_PROVIDER_ID } from '../../codex-deepseek/types/models';
 import type { CodexInstallationMethod } from '../settings';
 import { getCodexProviderSettings } from '../settings';
 import { isWindowsStyleCliReference, resolveCodexCliPath } from './CodexBinaryLocator';
@@ -13,6 +15,8 @@ export class CodexCliResolver {
   private lastEnvText = '';
   private lastInstallationMethod = '';
   private readonly cachedHostname = getHostnameKey();
+
+  constructor(private readonly providerId: string = 'codex') {}
 
   private canReuseResolvedPath(installationMethod: CodexInstallationMethod): boolean {
     const resolvedPath = this.resolvedPath?.trim();
@@ -28,11 +32,15 @@ export class CodexCliResolver {
   }
 
   resolveFromSettings(settings: Record<string, unknown>): string | null {
-    const codexSettings = getCodexProviderSettings(settings);
+    const codexSettings = this.providerId === CODEX_DEEPSEEK_PROVIDER_ID
+      ? getCodexDeepSeekProviderSettings(settings)
+      : getCodexProviderSettings(settings);
     const hostnamePath = (codexSettings.cliPathsByHost[this.cachedHostname] ?? '').trim();
     const legacyPath = codexSettings.cliPath.trim();
-    const envText = getRuntimeEnvironmentText(settings, 'codex');
-    const installationMethod = codexSettings.installationMethod;
+    const envText = getRuntimeEnvironmentText(settings, this.providerId);
+    const installationMethod = 'installationMethod' in codexSettings
+      ? codexSettings.installationMethod
+      : 'native-windows';
 
     if (
       this.resolvedPath &&

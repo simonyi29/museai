@@ -76,6 +76,26 @@ describe('CodexChatUIConfig', () => {
       });
       expect(options.length).toBe(2);
     });
+
+    it('does not surface DeepSeek models through the regular Codex provider', () => {
+      const options = codexChatUIConfig.getModelOptions({
+        providerConfigs: {
+          'codex-deepseek': {
+            enabled: true,
+            model: 'deepseek/deepseek-chat',
+          },
+        },
+      });
+
+      expect(options.map(option => option.value)).not.toContain('deepseek/deepseek-chat');
+    });
+  });
+
+  describe('ownsModel', () => {
+    it('does not claim DeepSeek models reserved for the Codex DeepSeek provider', () => {
+      expect(codexChatUIConfig.ownsModel('deepseek/deepseek-chat', {})).toBe(false);
+      expect(codexChatUIConfig.ownsModel('deepseek-chat', {})).toBe(false);
+    });
   });
 
   describe('isAdaptiveReasoningModel', () => {

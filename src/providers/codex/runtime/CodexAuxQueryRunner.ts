@@ -1,4 +1,5 @@
 import { ProviderSettingsCoordinator } from '../../../core/providers/ProviderSettingsCoordinator';
+import type { ProviderId } from '../../../core/providers/types';
 import type ClaudianPlugin from '../../../main';
 import { DEFAULT_CODEX_PRIMARY_MODEL } from '../types/models';
 import { CodexAppServerProcess } from './CodexAppServerProcess';
@@ -34,7 +35,11 @@ export class CodexAuxQueryRunner {
   private threadId: string | null = null;
   private launchSpec: CodexLaunchSpec | null = null;
 
-  constructor(private readonly plugin: ClaudianPlugin) {}
+  constructor(
+    private readonly plugin: ClaudianPlugin,
+    private readonly providerId: ProviderId = 'codex',
+    private readonly defaultModel: string = DEFAULT_CODEX_PRIMARY_MODEL,
+  ) {}
 
   async query(config: CodexAuxQueryConfig, prompt: string): Promise<string> {
     if (!this.process || !this.transport) {
@@ -154,13 +159,15 @@ export class CodexAuxQueryRunner {
   private resolveProviderModel(): string {
     const providerSettings = ProviderSettingsCoordinator.getProviderSettingsSnapshot(
       this.plugin.settings,
-      'codex',
+      this.providerId,
     );
-    return (providerSettings.model) ?? DEFAULT_CODEX_PRIMARY_MODEL;
+    return typeof providerSettings.model === 'string'
+      ? providerSettings.model
+      : this.defaultModel;
   }
 
   private async startProcess(): Promise<void> {
-    this.launchSpec = resolveCodexAppServerLaunchSpec(this.plugin, 'codex');
+    this.launchSpec = resolveCodexAppServerLaunchSpec(this.plugin, this.providerId);
     this.process = new CodexAppServerProcess(this.launchSpec);
     this.process.start();
 

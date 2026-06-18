@@ -30,6 +30,10 @@ import {
   updateCodexProviderSettings,
 } from '../../providers/codex/settings';
 import {
+  getCodexDeepSeekProviderSettings,
+  updateCodexDeepSeekProviderSettings,
+} from '../../providers/codex-deepseek/settings';
+import {
   getOpencodeProviderSettings,
   updateOpencodeProviderSettings,
 } from '../../providers/opencode/settings';
@@ -324,6 +328,10 @@ export class ClaudianSettingsStorage {
     updateCodexProviderSettings(
       merged,
       getCodexProviderSettings(legacyProviderSettings),
+    );
+    updateCodexDeepSeekProviderSettings(
+      merged,
+      getCodexDeepSeekProviderSettings(legacyProviderSettings),
     );
     updateOpencodeProviderSettings(
       merged,

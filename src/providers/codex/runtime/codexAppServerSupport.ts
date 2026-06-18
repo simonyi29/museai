@@ -6,6 +6,8 @@ import type { ProviderId } from '../../../core/providers/types';
 import type ClaudianPlugin from '../../../main';
 import { getEnhancedPath, parseEnvironmentVariables } from '../../../utils/env';
 import { getVaultPath } from '../../../utils/path';
+import { applyCodexDeepSeekEnvironment } from '../../codex-deepseek/runtime/CodexDeepSeekConfig';
+import { CODEX_DEEPSEEK_PROVIDER_ID } from '../../codex-deepseek/types/models';
 import type { InitializeResult } from './codexAppServerTypes';
 import { buildCodexLaunchSpec } from './CodexLaunchSpecBuilder';
 import type { CodexLaunchSpec } from './codexLaunchTypes';
@@ -60,11 +62,15 @@ export function buildCodexAppServerEnvironment(
   );
   const enhancedPath = getEnhancedPath(customEnv.PATH);
 
-  const env = {
+  let env: Record<string, string> = {
     ...baseEnv,
     ...customEnv,
     PATH: enhancedPath,
   };
+
+  if (providerId === CODEX_DEEPSEEK_PROVIDER_ID) {
+    env = applyCodexDeepSeekEnvironment(plugin, env);
+  }
 
   normalizeLegacyCodexConfigServiceTier(env);
 

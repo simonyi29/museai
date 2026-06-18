@@ -8,7 +8,7 @@ import {
   type SystemPromptSettings,
 } from '../../../core/prompt/mainAgent';
 import { ProviderSettingsCoordinator } from '../../../core/providers/ProviderSettingsCoordinator';
-import type { ProviderCapabilities, ProviderId } from '../../../core/providers/types';
+import type { ProviderCapabilities, ProviderChatUIConfig, ProviderId } from '../../../core/providers/types';
 import type { ChatRuntime } from '../../../core/runtime/ChatRuntime';
 import type {
   ApprovalCallback,
@@ -104,10 +104,22 @@ const EFFORT_MAP: Record<string, string> = {
   xhigh: 'xhigh',
 };
 
+export interface CodexChatRuntimeOptions {
+  providerId?: ProviderId;
+  capabilities?: Readonly<ProviderCapabilities>;
+  uiConfig?: ProviderChatUIConfig;
+  defaultModel?: string;
+  getSafeMode?: (settings: Record<string, unknown>) => CodexSafeMode;
+}
+
 export class CodexChatRuntime implements ChatRuntime {
-  readonly providerId: ProviderId = 'codex';
+  readonly providerId: ProviderId;
 
   private plugin: ClaudianPlugin;
+  private capabilities: Readonly<ProviderCapabilities>;
+  private uiConfig: ProviderChatUIConfig;
+  private defaultModel: string;
+  private getSafeModeFromSettings: (settings: Record<string, unknown>) => CodexSafeMode;
   private session = new CodexSessionManager();
   private process: CodexAppServerProcess | null = null;
   private transport: CodexRpcTransport | null = null;
@@ -145,12 +157,17 @@ export class CodexChatRuntime implements ChatRuntime {
   private canceled = false;
   private turnMetadata: ChatTurnMetadata = {};
 
-  constructor(plugin: ClaudianPlugin) {
+  constructor(plugin: ClaudianPlugin, options: CodexChatRuntimeOptions = {}) {
     this.plugin = plugin;
+    this.providerId = options.providerId ?? 'codex';
+    this.capabilities = options.capabilities ?? CODEX_PROVIDER_CAPABILITIES;
+    this.uiConfig = options.uiConfig ?? codexChatUIConfig;
+    this.defaultModel = options.defaultModel ?? DEFAULT_CODEX_PRIMARY_MODEL;
+    this.getSafeModeFromSettings = options.getSafeMode ?? ((settings) => getCodexProviderSettings(settings).safeMode);
   }
 
   getCapabilities(): Readonly<ProviderCapabilities> {
-    return CODEX_PROVIDER_CAPABILITIES;
+    return this.capabilities;
   }
 
   prepareTurn(request: ChatTurnRequest): PreparedChatTurn {
@@ -800,23 +817,23 @@ export class CodexChatRuntime implements ChatRuntime {
   private resolveModel(queryOptions?: ChatRuntimeQueryOptions): string | undefined {
     const providerSettings = this.getProviderSettings();
     const overrideModel = queryOptions?.model;
-    if (overrideModel && codexChatUIConfig.ownsModel(overrideModel, providerSettings)) {
+    if (overrideModel && this.uiConfig.ownsModel(overrideModel, providerSettings)) {
       return overrideModel;
     }
 
     const projectedModel = providerSettings.model;
-    if (typeof projectedModel === 'string' && codexChatUIConfig.ownsModel(projectedModel, providerSettings)) {
+    if (typeof projectedModel === 'string' && this.uiConfig.ownsModel(projectedModel, providerSettings)) {
       return projectedModel;
     }
 
-    return DEFAULT_CODEX_PRIMARY_MODEL;
+    return this.defaultModel;
   }
 
   private resolveSandboxConfig(): { approvalPolicy: string; sandbox: string } {
     const providerSettings = this.getProviderSettings();
     return resolveCodexSandboxConfig(
       providerSettings.permissionMode as string,
-      getCodexProviderSettings(providerSettings).safeMode,
+      this.getSafeModeFromSettings(providerSettings),
     );
   }
 

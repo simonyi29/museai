@@ -4,7 +4,7 @@ import { Notice, Platform } from 'obsidian';
 import { getHiddenProviderCommandSet } from '../../../core/providers/commands/hiddenCommands';
 import type { ProviderCommandDropdownConfig } from '../../../core/providers/commands/ProviderCommandCatalog';
 import type { ProviderCommandEntry } from '../../../core/providers/commands/ProviderCommandEntry';
-import { getEnabledProviderForModel, getProviderForModel } from '../../../core/providers/modelRouting';
+import { getEnabledProviderForModel } from '../../../core/providers/modelRouting';
 import { ProviderRegistry } from '../../../core/providers/ProviderRegistry';
 import { ProviderSettingsCoordinator } from '../../../core/providers/ProviderSettingsCoordinator';
 import { ProviderWorkspaceRegistry } from '../../../core/providers/ProviderWorkspaceRegistry';
@@ -366,6 +366,42 @@ function syncTabProviderServices(
   tab.services.subagentManager.setTaskResultInterpreter?.(
     ProviderRegistry.getTaskResultInterpreter(tab.providerId)
   );
+}
+
+async function applyBlankTabModelSelection(
+  tab: TabData,
+  plugin: ClaudianPlugin,
+  model: string,
+  getProviderCatalogConfig?: () => ProviderCatalogInfo,
+  onProviderChanged?: (providerId: ProviderId) => void | Promise<void>,
+): Promise<void> {
+  const previousProvider = tab.providerId;
+  tab.draftModel = model;
+  const newProvider = getEnabledProviderForModel(
+    model,
+    plugin.settings,
+  );
+  const didProviderChange = newProvider !== previousProvider;
+  if (tab.service) {
+    cleanupTabRuntime(tab);
+  }
+  tab.providerId = newProvider;
+  if (didProviderChange) {
+    syncTabProviderServices(tab, plugin);
+  }
+  syncSlashCommandDropdownForProvider(tab, plugin, getProviderCatalogConfig);
+
+  const uiConfig = ProviderRegistry.getChatUIConfig(newProvider);
+  await updateTabProviderSettings(tab, plugin, (settings) => {
+    settings.model = model;
+    uiConfig.applyModelDefaults(model, settings);
+  });
+  if (didProviderChange) {
+    await onProviderChanged?.(newProvider);
+  }
+  await uiConfig.prepareModelMetadata?.(model, plugin.settings, { plugin });
+  refreshTabProviderUI(tab, plugin);
+  applyProviderUIGating(tab, plugin);
 }
 
 function ensureTitleGenerationService(tab: TabData, plugin: ClaudianPlugin): void {
@@ -802,25 +838,26 @@ function initializeInputToolbar(
 
   const inputToolbar = dom.inputWrapper.createDiv({ cls: 'claudian-input-toolbar' });
 
-  // Blank-tab UI config wrapper that returns mixed model options
-  const blankTabUIConfigProxy = (): ProviderChatUIConfig => {
-    const draftProvider = tab.draftModel
+  // Model options are intentionally mixed across enabled providers so the
+  // active tab can switch routes from the same selector.
+  const mixedModelUIConfigProxy = (): ProviderChatUIConfig => {
+    const baseProvider = tab.lifecycleState === 'blank' && tab.draftModel
       ? getEnabledProviderForModel(tab.draftModel, plugin.settings)
-      : DEFAULT_CHAT_PROVIDER_ID;
-    const baseConfig = ProviderRegistry.getChatUIConfig(draftProvider);
+      : getTabProviderId(tab, plugin);
+    const baseConfig = ProviderRegistry.getChatUIConfig(baseProvider);
     return {
       ...baseConfig,
       getModelOptions: (settings: Record<string, unknown>) =>
-        getBlankTabModelOptions(settings),
+        getBlankTabModelOptions({
+          ...plugin.settings,
+          environmentVariables: settings.environmentVariables,
+        }),
     };
   };
 
   const toolbarComponents = createInputToolbar(inputToolbar, {
     getUIConfig: () => {
-      if (tab.lifecycleState === 'blank') {
-        return blankTabUIConfigProxy();
-      }
-      return getTabChatUIConfig(tab, plugin);
+      return mixedModelUIConfigProxy();
     },
     getCapabilities: () => getTabCapabilities(tab, plugin),
     getSettings: () => getTabSettingsSnapshot(tab, plugin),
@@ -828,49 +865,39 @@ function initializeInputToolbar(
     onModelChange: async (model: string) => {
       // For blank tabs, update draft model and derive provider
       if (tab.lifecycleState === 'blank') {
-        const previousProvider = tab.providerId;
-        tab.draftModel = model;
-        const newProvider = getEnabledProviderForModel(
+        await applyBlankTabModelSelection(
+          tab,
+          plugin,
           model,
-          plugin.settings,
+          getProviderCatalogConfig,
+          onProviderChanged,
         );
-        const didProviderChange = newProvider !== previousProvider;
-        if (tab.service) {
-          cleanupTabRuntime(tab);
-        }
-        tab.providerId = newProvider;
-        if (didProviderChange) {
-          syncTabProviderServices(tab, plugin);
-        }
-        syncSlashCommandDropdownForProvider(tab, plugin, getProviderCatalogConfig);
-
-        // Update settings for the new provider
-        const uiConfig = ProviderRegistry.getChatUIConfig(newProvider);
-        await updateTabProviderSettings(tab, plugin, (settings) => {
-          settings.model = model;
-          uiConfig.applyModelDefaults(model, settings);
-        });
-        if (didProviderChange) {
-          await onProviderChanged?.(newProvider);
-        }
-        await uiConfig.prepareModelMetadata?.(model, plugin.settings, { plugin });
-        tab.ui.thinkingBudgetSelector?.updateDisplay();
-        tab.ui.serviceTierToggle?.updateDisplay();
-        tab.ui.modelSelector?.updateDisplay();
-        tab.ui.modeSelector?.updateDisplay();
-        // Re-render options (provider may have changed reasoning controls)
-        tab.ui.modelSelector?.renderOptions();
-        tab.ui.modeSelector?.renderOptions();
-        applyProviderUIGating(tab, plugin);
         return;
       }
 
-      // For bound tabs, reject cross-provider model changes
+      // For bound tabs, a provider switch starts a fresh session in this tab.
+      // Provider-native histories are not compatible enough to merge safely.
       const boundProvider = tab.providerId;
-      const modelProvider = getProviderForModel(model, plugin.settings);
+      const modelProvider = getEnabledProviderForModel(model, plugin.settings);
       if (modelProvider !== boundProvider) {
-        new Notice('Cannot switch provider on a bound session. Start a new tab instead.');
-        tab.ui.modelSelector?.updateDisplay();
+        if (tab.state.isStreaming) {
+          new Notice('Stop the current response before switching providers.');
+          tab.ui.modelSelector?.updateDisplay();
+          return;
+        }
+        await tab.controllers.conversationController?.createNew({ force: true });
+        if (tab.controllers.conversationController === null) {
+          cleanupTabRuntime(tab);
+          tab.lifecycleState = 'blank';
+          tab.conversationId = null;
+        }
+        await applyBlankTabModelSelection(
+          tab,
+          plugin,
+          model,
+          getProviderCatalogConfig,
+          onProviderChanged,
+        );
         return;
       }
 
