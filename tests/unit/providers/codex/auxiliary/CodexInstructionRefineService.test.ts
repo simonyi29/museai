@@ -40,6 +40,15 @@ describe('CodexInstructionRefineService', () => {
     expect(result.clarification).toBe('Could you be more specific?');
   });
 
+  it('treats plain text prompt optimization output as the optimized prompt', async () => {
+    mockQuery.mockResolvedValue('删掉第3条，突出白薇进入密洞。');
+
+    const result = await service.optimizePrompt('第3条删掉');
+
+    expect(result.success).toBe(true);
+    expect(result.refinedInstruction).toBe('删掉第3条，突出白薇进入密洞。');
+  });
+
   it('should return error for continueConversation without active thread', async () => {
     const result = await service.continueConversation('follow up');
     expect(result.success).toBe(false);

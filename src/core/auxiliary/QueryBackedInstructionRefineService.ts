@@ -44,11 +44,15 @@ export class QueryBackedInstructionRefineService implements InstructionRefineSer
   ): Promise<InstructionRefineResult> {
     this.resetConversation();
     this.existingInstructions = '';
-    return this.sendMessage(
+    const result = await this.sendMessage(
       `Rewrite this user prompt and return only the optimized prompt:\n\n${rawPrompt}`,
       onProgress,
       buildPromptOptimizeSystemPrompt(),
     );
+    if (result.success && result.clarification && !result.refinedInstruction) {
+      return { success: true, refinedInstruction: result.clarification };
+    }
+    return result;
   }
 
   async continueConversation(

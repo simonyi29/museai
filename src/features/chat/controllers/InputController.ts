@@ -27,6 +27,7 @@ import type {
 import { TOOL_EXIT_PLAN_MODE } from '../../../core/tools/toolNames';
 import type { ApprovalDecision, ChatMessage, ExitPlanModeDecision, StreamChunk } from '../../../core/types';
 import type ClaudianPlugin from '../../../main';
+import { CODEX_SPARK_MODEL } from '../../../providers/codex/types/models';
 import { ResumeSessionDropdown } from '../../../shared/components/ResumeSessionDropdown';
 import { InstructionModal } from '../../../shared/modals/InstructionConfirmModal';
 import type { BrowserSelectionContext } from '../../../utils/browser';
@@ -68,7 +69,6 @@ const DEFAULT_APPROVAL_DECISION_OPTIONS: ApprovalDecisionOption[] =
     decision,
   }));
 
-const CODEX_PROMPT_OPTIMIZE_MODEL = 'gpt-3-codex-spark';
 const PROMPT_OPTIMIZE_TIMEOUT_MS = 30_000;
 
 function toError(error: unknown): Error {
@@ -158,7 +158,7 @@ export class InputController {
     instructionRefineService: InstructionRefineService,
   ): void {
     if (this.getActiveProviderId() === 'codex') {
-      instructionRefineService.setModelOverride?.(CODEX_PROMPT_OPTIMIZE_MODEL);
+      instructionRefineService.setModelOverride?.(CODEX_SPARK_MODEL);
       return;
     }
 

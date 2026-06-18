@@ -2647,7 +2647,7 @@ describe('InputController - Message Queue', () => {
       await controller.optimizePrompt();
 
       expect(mockInstructionRefineService.setModelOverride).toHaveBeenCalledWith(
-        'gpt-3-codex-spark',
+        'gpt-5.3-codex-spark',
       );
     });
 
