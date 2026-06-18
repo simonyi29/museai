@@ -298,3 +298,46 @@
   margin-top: 16px;
   justify-content: flex-end;
 }
+
+.museai-diagnostics-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 16px;
+}
+
+.museai-diagnostic-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-secondary);
+}
+
+.museai-diagnostic-status {
+  flex: 0 0 auto;
+  min-width: 54px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.museai-diagnostic-message {
+  color: var(--text-normal);
+  line-height: 1.45;
+}
+
+.museai-diagnostic-item--ok .museai-diagnostic-status {
+  color: var(--text-success);
+}
+
+.museai-diagnostic-item--warning .museai-diagnostic-status {
+  color: var(--text-warning);
+}
+
+.museai-diagnostic-item--error .museai-diagnostic-status {
+  color: var(--text-error);
+}

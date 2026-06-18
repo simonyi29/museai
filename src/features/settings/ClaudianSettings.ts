@@ -13,6 +13,7 @@ import { getAvailableLocales, getLocaleDisplayName, setLocale, t } from '../../i
 import type { Locale, TranslationKey } from '../../i18n/types';
 import type ClaudianPlugin from '../../main';
 import { formatContextLimit, parseContextLimit, parseEnvironmentVariables } from '../../utils/env';
+import { renderDiagnosticsSettingsTab } from './diagnostics';
 import { buildNavMappingText, parseNavMappings } from './keyboardNavigation';
 import { renderEnvironmentSettingsSection } from './ui/EnvironmentSettingsSection';
 
@@ -121,7 +122,7 @@ export class ClaudianSettingTab extends PluginSettingTab {
     setLocale(this.plugin.settings.locale as Locale);
 
     const providerTabs = ProviderRegistry.getRegisteredProviderIds();
-    const tabIds: SettingsTabId[] = ['general', ...providerTabs];
+    const tabIds: SettingsTabId[] = ['general', 'diagnostics', ...providerTabs];
     if (!tabIds.includes(this.activeTab)) {
       this.activeTab = 'general';
     }
@@ -133,7 +134,9 @@ export class ClaudianSettingTab extends PluginSettingTab {
     for (const id of tabIds) {
       const label = id === 'general'
         ? t('settings.tabs.general' as TranslationKey)
-        : ProviderRegistry.getProviderDisplayName(id);
+        : id === 'diagnostics'
+          ? 'Diagnostics'
+          : ProviderRegistry.getProviderDisplayName(id);
       const button = tabBar.createEl('button', {
         cls: `claudian-settings-tab${id === this.activeTab ? ' claudian-settings-tab--active' : ''}`,
         text: label,
@@ -156,6 +159,7 @@ export class ClaudianSettingTab extends PluginSettingTab {
     }
 
     this.renderGeneralTab(tabContents.get('general')!);
+    renderDiagnosticsSettingsTab(tabContents.get('diagnostics')!, this.plugin);
 
     for (const providerId of providerTabs) {
       const content = tabContents.get(providerId);
