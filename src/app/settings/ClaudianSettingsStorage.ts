@@ -34,6 +34,10 @@ import {
   updateCodexDeepSeekProviderSettings,
 } from '../../providers/codex-deepseek/settings';
 import {
+  CODEX_DEEPSEEK_PROVIDER_ID,
+  DEFAULT_CODEX_DEEPSEEK_MODEL,
+} from '../../providers/codex-deepseek/types/models';
+import {
   getOpencodeProviderSettings,
   updateOpencodeProviderSettings,
 } from '../../providers/opencode/settings';
@@ -69,6 +73,8 @@ const LEGACY_TOP_LEVEL_PROVIDER_FIELDS = [
   'lastEnvHash',
   'lastCodexEnvHash',
 ] as const;
+
+const OPENCODE_DEEPSEEK_FALLBACK_MODEL = 'opencode:deepseek/deepseek-v4-pro';
 
 const LEGACY_STRIPPED_SETTING_FIELDS = [
   'activeConversationId',
@@ -256,6 +262,44 @@ function normalizeEnvSnippets(value: unknown): EnvSnippet[] {
   return snippets;
 }
 
+function migrateUnsupportedCodexDeepSeekSelection(settings: StoredClaudianSettings): boolean {
+  const codexDeepSeekSettings = getCodexDeepSeekProviderSettings(settings);
+  const wasSelected = settings.settingsProvider === CODEX_DEEPSEEK_PROVIDER_ID
+    || settings.model === DEFAULT_CODEX_DEEPSEEK_MODEL
+    || settings.savedProviderModel?.[CODEX_DEEPSEEK_PROVIDER_ID] === DEFAULT_CODEX_DEEPSEEK_MODEL;
+
+  let changed = false;
+  if (codexDeepSeekSettings.enabled || codexDeepSeekSettings.wireApi !== 'responses') {
+    updateCodexDeepSeekProviderSettings(settings, {
+      enabled: false,
+      wireApi: 'responses',
+    });
+    changed = true;
+  }
+
+  if (wasSelected) {
+    const opencodeModel = settings.savedProviderModel?.opencode
+      || OPENCODE_DEEPSEEK_FALLBACK_MODEL;
+    settings.settingsProvider = 'opencode';
+    settings.model = opencodeModel;
+    settings.savedProviderModel = {
+      ...settings.savedProviderModel,
+      opencode: opencodeModel,
+    };
+
+    const opencodeSettings = getOpencodeProviderSettings(settings);
+    if (!opencodeSettings.enabled) {
+      updateOpencodeProviderSettings(settings, {
+        ...opencodeSettings,
+        enabled: true,
+      });
+    }
+    changed = true;
+  }
+
+  return changed;
+}
+
 function hasLegacyTopLevelProviderFields(stored: Record<string, unknown>): boolean {
   return LEGACY_TOP_LEVEL_PROVIDER_FIELDS.some((key) => key in stored);
 }
@@ -341,6 +385,7 @@ export class ClaudianSettingsStorage {
       merged,
       getPiProviderSettings(legacyProviderSettings),
     );
+    const didMigrateUnsupportedCodexDeepSeek = migrateUnsupportedCodexDeepSeekSelection(merged);
     const didNormalizeHostScopedProviderConfigs = hasHostScopedProviderConfigNormalization(
       providerConfigs,
       merged.providerConfigs,
@@ -359,6 +404,7 @@ export class ClaudianSettingsStorage {
       || 'enableBlocklist' in stored
       || 'blockedCommands' in stored
       || shouldPersistChatViewPlacementMigration(stored, chatViewPlacement)
+      || didMigrateUnsupportedCodexDeepSeek
       || JSON.stringify(envSnippets) !== JSON.stringify(stored.envSnippets ?? [])
       || (
         'customModelAliases' in stored

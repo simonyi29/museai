@@ -38,7 +38,7 @@ describe('CodexDeepSeekConfig', () => {
           model: 'deepseek/deepseek-chat',
           baseUrl: 'https://api.deepseek.com',
           envKey: 'DEEPSEEK_API_KEY',
-          wireApi: 'chat',
+          wireApi: 'responses',
         },
       },
     });
@@ -52,7 +52,7 @@ describe('CodexDeepSeekConfig', () => {
     expect(config).toContain('[model_providers.deepseek]');
     expect(config).toContain('base_url = "https://api.deepseek.com"');
     expect(config).toContain('env_key = "DEEPSEEK_API_KEY"');
-    expect(config).toContain('wire_api = "chat"');
+    expect(config).toContain('wire_api = "responses"');
   });
 
   it('sets CODEX_HOME to the private config directory when the API key is available', () => {

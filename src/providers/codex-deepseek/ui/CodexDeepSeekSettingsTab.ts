@@ -33,11 +33,12 @@ export const codexDeepSeekSettingsTabRenderer: ProviderSettingsTabRenderer = {
 
     new Setting(container)
       .setName('Enable')
-      .setDesc('Show the isolated Codex DeepSeek provider. It uses a private Codex config and does not affect OpenCode.')
+      .setDesc('Unavailable for direct use: current Codex custom providers require Responses API, while DeepSeek exposes Chat Completions. Use OpenCode DeepSeek instead.')
       .addToggle(toggle => toggle
-        .setValue(providerSettings.enabled)
-        .onChange(async (value) => {
-          updateCodexDeepSeekProviderSettings(settingsBag, { enabled: value });
+        .setValue(false)
+        .setDisabled(true)
+        .onChange(async (_value) => {
+          updateCodexDeepSeekProviderSettings(settingsBag, { enabled: false });
           await context.plugin.saveSettings();
           context.refreshModelSelectors();
         }));
@@ -141,9 +142,9 @@ export const codexDeepSeekSettingsTabRenderer: ProviderSettingsTabRenderer = {
 
     new Setting(container)
       .setName('Wire API')
-      .setDesc('Codex custom provider wire API. DeepSeek exposes Chat Completions, so use chat unless a proxy supports Responses.')
+      .setDesc('Codex currently accepts responses here. DeepSeek direct mode is disabled because the DeepSeek endpoint does not expose Responses API.')
       .addText(text => text
-        .setPlaceholder('chat')
+        .setPlaceholder('responses')
         .setValue(providerSettings.wireApi)
         .onChange(async (value) => {
           updateCodexDeepSeekProviderSettings(settingsBag, { wireApi: value });

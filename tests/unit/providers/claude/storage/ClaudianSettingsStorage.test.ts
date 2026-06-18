@@ -96,6 +96,40 @@ describe('ClaudianSettingsStorage', () => {
       expect(result.thinkingBudget).toBe(DEFAULT_SETTINGS.thinkingBudget);
     });
 
+    it('migrates unsupported Codex DeepSeek selection back to OpenCode DeepSeek', async () => {
+      mockAdapter.exists.mockResolvedValue(true);
+      mockAdapter.read.mockResolvedValue(JSON.stringify({
+        settingsProvider: 'codex-deepseek',
+        model: 'deepseek/deepseek-chat',
+        savedProviderModel: {
+          'codex-deepseek': 'deepseek/deepseek-chat',
+          opencode: 'opencode:deepseek/deepseek-v4-pro',
+        },
+        providerConfigs: {
+          'codex-deepseek': {
+            enabled: true,
+            wireApi: 'chat',
+          },
+          opencode: {
+            enabled: true,
+          },
+        },
+      }));
+
+      const result = await storage.load();
+
+      expect(result.settingsProvider).toBe('opencode');
+      expect(result.model).toBe('opencode:deepseek/deepseek-v4-pro');
+      expect(result.providerConfigs['codex-deepseek']).toEqual(expect.objectContaining({
+        enabled: false,
+        wireApi: 'responses',
+      }));
+      expect(mockAdapter.write).toHaveBeenCalledWith(
+        CLAUDIAN_SETTINGS_PATH,
+        expect.stringContaining('"settingsProvider": "opencode"'),
+      );
+    });
+
     it('migrates legacy openInMainTab true to main-tab placement', async () => {
       mockAdapter.exists.mockResolvedValue(true);
       mockAdapter.read.mockResolvedValue(JSON.stringify({

@@ -34,7 +34,7 @@ export const DEFAULT_CODEX_DEEPSEEK_PROVIDER_SETTINGS: Readonly<CodexDeepSeekPro
   model: DEFAULT_CODEX_DEEPSEEK_MODEL,
   baseUrl: 'https://api.deepseek.com',
   envKey: 'DEEPSEEK_API_KEY',
-  wireApi: 'chat',
+  wireApi: 'responses',
   environmentVariables: '',
   environmentHash: '',
 });

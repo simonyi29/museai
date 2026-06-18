@@ -18,7 +18,10 @@ import { codexDeepSeekChatUIConfig } from './ui/CodexDeepSeekChatUIConfig';
 export const codexDeepSeekProviderRegistration: ProviderRegistration = {
   displayName: 'Codex DeepSeek',
   blankTabOrder: 16,
-  isEnabled: settings => getCodexDeepSeekProviderSettings(settings).enabled,
+  // Codex CLI currently requires Responses API custom providers, while
+  // DeepSeek exposes Chat Completions. Keep the registration for migration and
+  // settings compatibility, but do not expose it as a selectable chat route.
+  isEnabled: () => false,
   capabilities: CODEX_DEEPSEEK_PROVIDER_CAPABILITIES,
   environmentKeyPatterns: [/^DEEPSEEK_/i, /^CODEX_DEEPSEEK_/i],
   chatUIConfig: codexDeepSeekChatUIConfig,
