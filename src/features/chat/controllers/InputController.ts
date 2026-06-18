@@ -68,6 +68,9 @@ const DEFAULT_APPROVAL_DECISION_OPTIONS: ApprovalDecisionOption[] =
     decision,
   }));
 
+const CODEX_PROMPT_OPTIMIZE_MODEL = 'gpt-3-codex-spark';
+const PROMPT_OPTIMIZE_TIMEOUT_MS = 30_000;
+
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
@@ -149,6 +152,17 @@ export class InputController {
     instructionRefineService: InstructionRefineService,
   ): void {
     instructionRefineService.setModelOverride?.(this.getAuxiliaryModel() ?? undefined);
+  }
+
+  private syncPromptOptimizeModelOverride(
+    instructionRefineService: InstructionRefineService,
+  ): void {
+    if (this.getActiveProviderId() === 'codex') {
+      instructionRefineService.setModelOverride?.(CODEX_PROMPT_OPTIMIZE_MODEL);
+      return;
+    }
+
+    this.syncInstructionRefineModelOverride(instructionRefineService);
   }
 
   private replaceInputValue(value: string): void {
@@ -1343,9 +1357,12 @@ export class InputController {
     }
 
     try {
-      this.syncInstructionRefineModelOverride(instructionRefineService);
+      this.syncPromptOptimizeModelOverride(instructionRefineService);
       instructionRefineService.resetConversation();
-      const result = await instructionRefineService.optimizePrompt(rawPrompt);
+      const result = await this.runPromptOptimizationWithTimeout(
+        instructionRefineService,
+        rawPrompt,
+      );
 
       if (!result.success) {
         if (result.error !== 'Cancelled') {
@@ -1369,6 +1386,30 @@ export class InputController {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       new Notice(`Error: ${errorMsg}`);
+    }
+  }
+
+  private async runPromptOptimizationWithTimeout(
+    instructionRefineService: InstructionRefineService,
+    rawPrompt: string,
+  ) {
+    let timeoutId: number | null = null;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = window.setTimeout(() => {
+        instructionRefineService.cancel();
+        reject(new Error('Prompt optimization timed out'));
+      }, PROMPT_OPTIMIZE_TIMEOUT_MS);
+    });
+
+    try {
+      return await Promise.race([
+        instructionRefineService.optimizePrompt(rawPrompt),
+        timeoutPromise,
+      ]);
+    } finally {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
     }
   }
 

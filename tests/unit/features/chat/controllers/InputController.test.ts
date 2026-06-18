@@ -2627,6 +2627,55 @@ describe('InputController - Message Queue', () => {
       expect(inputEl.focus).toHaveBeenCalled();
     });
 
+    it('should use the fast Codex spark model for Codex prompt optimization', async () => {
+      const mockInstructionRefineService = createMockInstructionRefineService({
+        optimizePrompt: jest.fn().mockResolvedValue({
+          success: true,
+          refinedInstruction: 'optimized prompt',
+        }),
+      });
+
+      deps = createMockDeps({
+        getInstructionRefineService: () => mockInstructionRefineService as any,
+        getAuxiliaryModel: () => 'gpt-5.5',
+        getTabProviderId: () => 'codex',
+      });
+      deps.getInputEl().value = 'rough prompt';
+
+      controller = new InputController(deps);
+
+      await controller.optimizePrompt();
+
+      expect(mockInstructionRefineService.setModelOverride).toHaveBeenCalledWith(
+        'gpt-3-codex-spark',
+      );
+    });
+
+    it('should cancel prompt optimization when it times out', async () => {
+      jest.useFakeTimers();
+      try {
+        const mockInstructionRefineService = createMockInstructionRefineService({
+          optimizePrompt: jest.fn().mockReturnValue(new Promise(() => {})),
+        });
+
+        deps = createMockDeps({
+          getInstructionRefineService: () => mockInstructionRefineService as any,
+        });
+        deps.getInputEl().value = 'rough prompt';
+
+        controller = new InputController(deps);
+
+        const promise = controller.optimizePrompt();
+        jest.advanceTimersByTime(30_000);
+        await promise;
+
+        expect(mockInstructionRefineService.cancel).toHaveBeenCalled();
+        expect(mockNotice).toHaveBeenCalledWith('Error: Prompt optimization timed out');
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
     it('should not call the refine service when the input is empty', async () => {
       const mockInstructionRefineService = createMockInstructionRefineService();
       deps = createMockDeps({

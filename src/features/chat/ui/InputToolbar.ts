@@ -562,12 +562,14 @@ export class PromptOptimizeButton {
     this.inFlight = true;
     this.buttonEl.addClass('loading');
     this.buttonEl.setAttribute('aria-disabled', 'true');
+    this.buttonEl.setAttribute('title', 'Optimizing prompt...');
     try {
       await this.callbacks.onOptimizePrompt();
     } finally {
       this.inFlight = false;
       this.buttonEl.removeClass('loading');
       this.buttonEl.removeAttribute('aria-disabled');
+      this.buttonEl.setAttribute('title', 'Optimize prompt');
     }
   }
 }
