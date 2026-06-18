@@ -1,4 +1,8 @@
-import { buildRefineSystemPrompt, parseInstructionRefineResponse } from '../prompt/instructionRefine';
+import {
+  buildPromptOptimizeSystemPrompt,
+  buildRefineSystemPrompt,
+  parseInstructionRefineResponse,
+} from '../prompt/instructionRefine';
 import type {
   InstructionRefineService,
   RefineProgressCallback,
@@ -34,6 +38,19 @@ export class QueryBackedInstructionRefineService implements InstructionRefineSer
     return this.sendMessage(`Please refine this instruction: "${rawInstruction}"`, onProgress);
   }
 
+  async optimizePrompt(
+    rawPrompt: string,
+    onProgress?: RefineProgressCallback,
+  ): Promise<InstructionRefineResult> {
+    this.resetConversation();
+    this.existingInstructions = '';
+    return this.sendMessage(
+      `Rewrite this user prompt and return only the optimized prompt:\n\n${rawPrompt}`,
+      onProgress,
+      buildPromptOptimizeSystemPrompt(),
+    );
+  }
+
   async continueConversation(
     message: string,
     onProgress?: RefineProgressCallback,
@@ -52,6 +69,7 @@ export class QueryBackedInstructionRefineService implements InstructionRefineSer
   private async sendMessage(
     prompt: string,
     onProgress?: RefineProgressCallback,
+    systemPrompt = buildRefineSystemPrompt(this.existingInstructions),
   ): Promise<InstructionRefineResult> {
     this.abortController = new AbortController();
 
@@ -62,7 +80,7 @@ export class QueryBackedInstructionRefineService implements InstructionRefineSer
         onTextChunk: onProgress
           ? (accumulatedText: string) => onProgress(parseInstructionRefineResponse(accumulatedText))
           : undefined,
-        systemPrompt: buildRefineSystemPrompt(this.existingInstructions),
+        systemPrompt,
       }, prompt);
       this.hasConversation = true;
       return parseInstructionRefineResponse(text);

@@ -963,6 +963,9 @@ function initializeInputToolbar(
         mode === 'plan' && getTabCapabilities(tab, plugin).supportsPlanMode,
       );
     },
+    onOptimizePrompt: async () => {
+      await tab.controllers.inputController?.optimizePrompt();
+    },
   });
 
   tab.ui.modelSelector = toolbarComponents.modelSelector;

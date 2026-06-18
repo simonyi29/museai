@@ -53,6 +53,7 @@ export interface ToolbarCallbacks {
   onEffortLevelChange: (effort: string) => Promise<void>;
   onServiceTierChange: (serviceTier: string) => Promise<void>;
   onPermissionModeChange: (mode: string) => Promise<void>;
+  onOptimizePrompt: () => Promise<void>;
   getSettings: () => ToolbarSettings;
   getEnvironmentVariables?: () => string;
   getUIConfig: () => ProviderChatUIConfig;
@@ -525,6 +526,49 @@ export class ServiceTierToggle {
       : toggleConfig.activeValue;
     await this.callbacks.onServiceTierChange(next);
     this.updateDisplay();
+  }
+}
+
+export class PromptOptimizeButton {
+  private container: HTMLElement;
+  private buttonEl: HTMLElement | null = null;
+  private iconEl: HTMLElement | null = null;
+  private callbacks: ToolbarCallbacks;
+  private inFlight = false;
+
+  constructor(parentEl: HTMLElement, callbacks: ToolbarCallbacks) {
+    this.callbacks = callbacks;
+    this.container = parentEl.createDiv({ cls: 'claudian-prompt-optimize' });
+    this.render();
+  }
+
+  private render() {
+    this.container.empty();
+    this.buttonEl = this.container.createDiv({ cls: 'claudian-prompt-optimize-button' });
+    this.buttonEl.setAttribute('role', 'button');
+    this.buttonEl.setAttribute('aria-label', 'Optimize prompt');
+    this.buttonEl.setAttribute('title', 'Optimize prompt');
+    this.iconEl = this.buttonEl.createSpan({ cls: 'claudian-prompt-optimize-icon' });
+    setIcon(this.iconEl, 'sparkles');
+
+    this.buttonEl.addEventListener('click', () => {
+      runToolbarAction(() => this.optimize(), 'Failed to optimize prompt');
+    });
+  }
+
+  private async optimize(): Promise<void> {
+    if (this.inFlight || !this.buttonEl) return;
+
+    this.inFlight = true;
+    this.buttonEl.addClass('loading');
+    this.buttonEl.setAttribute('aria-disabled', 'true');
+    try {
+      await this.callbacks.onOptimizePrompt();
+    } finally {
+      this.inFlight = false;
+      this.buttonEl.removeClass('loading');
+      this.buttonEl.removeAttribute('aria-disabled');
+    }
   }
 }
 
@@ -1225,6 +1269,7 @@ export function createInputToolbar(
   const modelSelector = new ModelSelector(parentEl, callbacks);
   const thinkingBudgetSelector = new ThinkingBudgetSelector(parentEl, callbacks);
   const serviceTierToggle = new ServiceTierToggle(parentEl, callbacks);
+  new PromptOptimizeButton(parentEl, callbacks);
   const contextUsageMeter = new ContextUsageMeter(parentEl);
   const externalContextSelector = new ExternalContextSelector(parentEl, callbacks);
   const mcpServerSelector = new McpServerSelector(parentEl);

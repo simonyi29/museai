@@ -496,6 +496,10 @@ export interface InstructionRefineService {
     existingInstructions: string,
     onProgress?: RefineProgressCallback
   ): Promise<InstructionRefineResult>;
+  optimizePrompt(
+    rawPrompt: string,
+    onProgress?: RefineProgressCallback
+  ): Promise<InstructionRefineResult>;
   continueConversation(
     message: string,
     onProgress?: RefineProgressCallback

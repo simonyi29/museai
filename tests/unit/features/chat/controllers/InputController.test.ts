@@ -23,6 +23,7 @@ function createMockInputEl() {
   return {
     value: '',
     focus: jest.fn(),
+    dispatchEvent: jest.fn(),
   } as unknown as HTMLTextAreaElement;
 }
 
@@ -96,6 +97,7 @@ function createMockAgentService() {
 function createMockInstructionRefineService(overrides: Record<string, jest.Mock> = {}) {
   return {
     refineInstruction: jest.fn().mockResolvedValue({ success: true }),
+    optimizePrompt: jest.fn().mockResolvedValue({ success: true }),
     resetConversation: jest.fn(),
     continueConversation: jest.fn(),
     cancel: jest.fn(),
@@ -2590,6 +2592,53 @@ describe('InputController - Message Queue', () => {
       controller = new InputController(deps);
 
       await expect(controller.handleInstructionSubmit('test')).resolves.not.toThrow();
+    });
+  });
+
+  describe('optimizePrompt', () => {
+    it('should replace the input with the optimized prompt', async () => {
+      const mockInstructionRefineService = createMockInstructionRefineService({
+        optimizePrompt: jest.fn().mockResolvedValue({
+          success: true,
+          refinedInstruction: 'optimized prompt',
+        }),
+      });
+
+      deps = createMockDeps({
+        getInstructionRefineService: () => mockInstructionRefineService as any,
+        getAuxiliaryModel: () => 'opencode:deepseek/deepseek-chat',
+      });
+      deps.plugin.settings.systemPrompt = 'system prompt';
+      const inputEl = deps.getInputEl();
+      inputEl.value = 'rough prompt';
+
+      controller = new InputController(deps);
+
+      await controller.optimizePrompt();
+
+      expect(mockInstructionRefineService.resetConversation).toHaveBeenCalled();
+      expect(mockInstructionRefineService.setModelOverride).toHaveBeenCalledWith(
+        'opencode:deepseek/deepseek-chat',
+      );
+      expect(mockInstructionRefineService.optimizePrompt).toHaveBeenCalledWith('rough prompt');
+      expect(inputEl.value).toBe('optimized prompt');
+      expect(inputEl.dispatchEvent).toHaveBeenCalledWith(expect.any(Event));
+      expect(deps.resetInputHeight).toHaveBeenCalled();
+      expect(inputEl.focus).toHaveBeenCalled();
+    });
+
+    it('should not call the refine service when the input is empty', async () => {
+      const mockInstructionRefineService = createMockInstructionRefineService();
+      deps = createMockDeps({
+        getInstructionRefineService: () => mockInstructionRefineService as any,
+      });
+      deps.getInputEl().value = '   ';
+      controller = new InputController(deps);
+
+      await controller.optimizePrompt();
+
+      expect(mockInstructionRefineService.optimizePrompt).not.toHaveBeenCalled();
+      expect(mockNotice).toHaveBeenCalledWith('Enter a prompt to optimize');
     });
   });
 

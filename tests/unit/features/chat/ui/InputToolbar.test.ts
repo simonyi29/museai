@@ -153,10 +153,11 @@ function createMockCallbacks(overrides: Record<string, any> = {}) {
     onModelChange: jest.fn().mockResolvedValue(undefined),
     onModeChange: jest.fn().mockResolvedValue(undefined),
     onThinkingBudgetChange: jest.fn().mockResolvedValue(undefined),
-    onEffortLevelChange: jest.fn().mockResolvedValue(undefined),
-    onServiceTierChange: jest.fn().mockResolvedValue(undefined),
-    onPermissionModeChange: jest.fn().mockResolvedValue(undefined),
-    getSettings: jest.fn().mockReturnValue({
+  onEffortLevelChange: jest.fn().mockResolvedValue(undefined),
+  onServiceTierChange: jest.fn().mockResolvedValue(undefined),
+  onPermissionModeChange: jest.fn().mockResolvedValue(undefined),
+  onOptimizePrompt: jest.fn().mockResolvedValue(undefined),
+  getSettings: jest.fn().mockReturnValue({
       model: 'sonnet',
       thinkingBudget: 'low',
       effortLevel: 'high',
@@ -1135,5 +1136,20 @@ describe('createInputToolbar', () => {
     expect(permissionIndex).toBeGreaterThanOrEqual(0);
     expect(modeIndex).toBeGreaterThan(permissionIndex);
     expect(modeIndex).toBe(parentEl.children.length - 1);
+  });
+
+  it('should run prompt optimization from the toolbar button', async () => {
+    const parentEl = createMockEl();
+    const callbacks = createMockCallbacks();
+
+    createInputToolbar(parentEl, callbacks);
+
+    const button = parentEl.querySelector('.claudian-prompt-optimize-button');
+    expect(button).not.toBeNull();
+
+    button?.click();
+    await Promise.resolve();
+
+    expect(callbacks.onOptimizePrompt).toHaveBeenCalledTimes(1);
   });
 });

@@ -2434,6 +2434,52 @@ body.theme-light .claudian-message-content pre {
 
 
 /* ============================================
+   toolbar/prompt-optimize.css
+   ============================================ */
+/* Prompt optimize button */
+.claudian-prompt-optimize {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.claudian-prompt-optimize-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--text-faint);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.claudian-prompt-optimize-button:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.claudian-prompt-optimize-button.loading {
+  color: var(--claudian-brand);
+  cursor: wait;
+}
+
+.claudian-prompt-optimize-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.claudian-prompt-optimize-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+
+/* ============================================
    toolbar/external-context.css
    ============================================ */
 /* External Context Selector */

@@ -1,4 +1,7 @@
-import { buildRefineSystemPrompt } from '../../../core/prompt/instructionRefine';
+import {
+  buildPromptOptimizeSystemPrompt,
+  buildRefineSystemPrompt,
+} from '../../../core/prompt/instructionRefine';
 import type { RefineProgressCallback } from '../../../core/providers/types';
 import type { InstructionRefineResult } from '../../../core/types';
 import type ClaudianPlugin from '../../../main';
@@ -29,6 +32,19 @@ export class InstructionRefineService {
     return this.sendMessage(prompt, onProgress);
   }
 
+  async optimizePrompt(
+    rawPrompt: string,
+    onProgress?: RefineProgressCallback
+  ): Promise<InstructionRefineResult> {
+    this.sessionId = null;
+    this.existingInstructions = '';
+    return this.sendMessage(
+      `Rewrite this user prompt and return only the optimized prompt:\n\n${rawPrompt}`,
+      onProgress,
+      buildPromptOptimizeSystemPrompt(),
+    );
+  }
+
   async continueConversation(
     message: string,
     onProgress?: RefineProgressCallback
@@ -48,14 +64,15 @@ export class InstructionRefineService {
 
   private async sendMessage(
     prompt: string,
-    onProgress?: RefineProgressCallback
+    onProgress?: RefineProgressCallback,
+    systemPrompt = buildRefineSystemPrompt(this.existingInstructions)
   ): Promise<InstructionRefineResult> {
     this.abortController = new AbortController();
 
     try {
       const result = await runColdStartQuery({
         plugin: this.plugin,
-        systemPrompt: buildRefineSystemPrompt(this.existingInstructions),
+        systemPrompt,
         tools: [],
         resumeSessionId: this.sessionId ?? undefined,
         abortController: this.abortController,

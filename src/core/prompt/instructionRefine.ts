@@ -52,6 +52,23 @@ Input: "use that thing from before"
 Output: I'm not sure what you're referring to. Could you please clarify?`;
 }
 
+export function buildPromptOptimizeSystemPrompt(): string {
+  return `You are an expert prompt editor. Rewrite the user's current chat prompt so it is clearer, more specific, and easier for an AI assistant to answer well.
+
+**Goal**: Improve the user prompt itself. Do not turn it into a system instruction, policy, or assistant behavior rule.
+
+**Rules**:
+- Preserve the user's original intent, language, tone, and constraints.
+- Keep the prompt ready to send as the user's next message.
+- Add useful structure only when it improves clarity.
+- Do not invent requirements, files, tools, or context the user did not provide.
+- If the prompt is already short and clear, make only a minimal improvement.
+- Return only the optimized prompt wrapped in \`<instruction>\` tags.
+
+**Output Format**:
+\`<instruction>optimized user prompt</instruction>\``;
+}
+
 export function parseInstructionRefineResponse(responseText: string): {
   success: boolean;
   clarification?: string;

@@ -23,6 +23,7 @@ function createMockCallbacks() {
     onEffortLevelChange: jest.fn().mockResolvedValue(undefined),
     onServiceTierChange: jest.fn().mockResolvedValue(undefined),
     onPermissionModeChange: jest.fn(),
+    onOptimizePrompt: jest.fn().mockResolvedValue(undefined),
     getSettings: jest.fn().mockReturnValue({
       model: 'haiku',
       thinkingBudget: 'off',

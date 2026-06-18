@@ -231,6 +231,7 @@ const createMockInputController = () => ({
   sendMessage: jest.fn(),
   cancelStreaming: jest.fn(),
   handleInstructionSubmit: jest.fn(),
+  optimizePrompt: jest.fn(),
   updateQueueIndicator: jest.fn(),
   handleResumeKeydown: jest.fn().mockReturnValue(false),
   isResumeDropdownVisible: jest.fn().mockReturnValue(false),

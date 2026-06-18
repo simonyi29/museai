@@ -151,6 +151,14 @@ export class InputController {
     instructionRefineService.setModelOverride?.(this.getAuxiliaryModel() ?? undefined);
   }
 
+  private replaceInputValue(value: string): void {
+    const inputEl = this.deps.getInputEl();
+    inputEl.value = value;
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    this.deps.resetInputHeight();
+    inputEl.focus();
+  }
+
   private getActiveProviderId(): ProviderId {
     const agentService = this.getAgentService();
     const conversationId = this.deps.state.currentConversationId;
@@ -1316,6 +1324,51 @@ export class InputController {
       new Notice(`Error: ${errorMsg}`);
       modal?.showError(errorMsg);
       instructionModeManager?.clear();
+    }
+  }
+
+  async optimizePrompt(): Promise<void> {
+    const inputEl = this.deps.getInputEl();
+    const rawPrompt = inputEl.value.trim();
+    if (!rawPrompt) {
+      new Notice('Enter a prompt to optimize');
+      inputEl.focus();
+      return;
+    }
+
+    const instructionRefineService = this.deps.getInstructionRefineService();
+    if (!instructionRefineService) {
+      new Notice('Prompt optimization is not available for this provider');
+      return;
+    }
+
+    try {
+      this.syncInstructionRefineModelOverride(instructionRefineService);
+      instructionRefineService.resetConversation();
+      const result = await instructionRefineService.optimizePrompt(rawPrompt);
+
+      if (!result.success) {
+        if (result.error !== 'Cancelled') {
+          new Notice(result.error || 'Failed to optimize prompt');
+        }
+        return;
+      }
+
+      if (result.refinedInstruction) {
+        this.replaceInputValue(result.refinedInstruction);
+        new Notice('Prompt optimized');
+        return;
+      }
+
+      if (result.clarification) {
+        new Notice('Prompt needs more detail before optimization');
+        return;
+      }
+
+      new Notice('No optimized prompt received');
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      new Notice(`Error: ${errorMsg}`);
     }
   }
 
