@@ -69,7 +69,7 @@ const DEFAULT_APPROVAL_DECISION_OPTIONS: ApprovalDecisionOption[] =
     decision,
   }));
 
-const PROMPT_OPTIMIZE_TIMEOUT_MS = 30_000;
+const PROMPT_OPTIMIZE_TIMEOUT_MS = 90_000;
 
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));

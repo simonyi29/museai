@@ -2666,7 +2666,7 @@ describe('InputController - Message Queue', () => {
         controller = new InputController(deps);
 
         const promise = controller.optimizePrompt();
-        jest.advanceTimersByTime(30_000);
+        jest.advanceTimersByTime(90_000);
         await promise;
 
         expect(mockInstructionRefineService.cancel).toHaveBeenCalled();
