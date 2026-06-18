@@ -53,6 +53,7 @@ export class CodexAuxQueryRunner {
         cwd: this.launchSpec?.targetCwd ?? process.cwd(),
         approvalPolicy: 'never',
         sandbox: 'read-only',
+        serviceTier: null,
         baseInstructions: config.systemPrompt,
         experimentalRawEvents: true,
         persistExtendedHistory: false,
@@ -122,6 +123,7 @@ export class CodexAuxQueryRunner {
       threadId: this.threadId,
       input: [{ type: 'text', text: prompt }],
       model: config.model,
+      serviceTier: null,
     });
     turnId = turnResult.turn.id;
 

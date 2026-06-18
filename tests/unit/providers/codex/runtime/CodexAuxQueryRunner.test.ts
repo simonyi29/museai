@@ -124,7 +124,28 @@ describe('CodexAuxQueryRunner', () => {
       expect.objectContaining({
         cwd: '/mnt/c/repo',
         experimentalRawEvents: true,
+        serviceTier: null,
       }),
     );
+  });
+
+  it('overrides global service tier for auxiliary turns', async () => {
+    const plugin = {
+      settings: {},
+      getActiveEnvironmentVariables: jest.fn(),
+      app: {
+        vault: {
+          adapter: { basePath: 'C:\\repo' },
+        },
+      },
+    } as any;
+
+    const runner = new CodexAuxQueryRunner(plugin);
+    await runner.query({ systemPrompt: 'You are concise.' }, 'Summarize this');
+
+    const turnStartCall = mockTransportRequest.mock.calls.find(([method]) => method === 'turn/start');
+    expect(turnStartCall?.[1]).toEqual(expect.objectContaining({
+      serviceTier: null,
+    }));
   });
 });
