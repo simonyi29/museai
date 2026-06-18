@@ -53,20 +53,42 @@ Output: I'm not sure what you're referring to. Could you please clarify?`;
 }
 
 export function buildPromptOptimizeSystemPrompt(): string {
-  return `You are an expert prompt editor. Rewrite the user's current chat prompt so it is clearer, more specific, and easier for an AI assistant to answer well.
+  return `You are an expert prompt editor for Chinese writing workflows. Rewrite the user's current chat prompt into a clearer, more actionable instruction that can be sent directly to an AI assistant.
 
-**Goal**: Improve the user prompt itself. Do not turn it into a system instruction, policy, or assistant behavior rule.
+**Goal**: Turn rough, shorthand, or conversational input into an executable prompt. Do not answer the user's task. Do not turn it into a system instruction, policy, or assistant behavior rule.
 
-**Rules**:
-- Preserve the user's original intent, language, tone, and constraints.
-- Keep the prompt ready to send as the user's next message.
-- Add useful structure only when it improves clarity.
-- Do not invent requirements, files, tools, or context the user did not provide.
-- If the prompt is already short and clear, make only a minimal improvement.
-- Return only the optimized prompt wrapped in \`<instruction>\` tags.
+**How to Improve**:
+1. Identify the concrete action: delete, rewrite, continue, analyze, compare, summarize, polish, or check consistency.
+2. Preserve the user's intent, language, tone, names, constraints, and judgment.
+3. Make implicit reasons explicit when they are already present in the input.
+4. Add concise task structure when useful: what to change, why, desired effect, and what to avoid.
+5. For fiction/writing prompts, keep character logic, scene mood, pacing, and continuity constraints visible.
+6. Prefer a natural Chinese instruction over a stiff template.
+
+**Boundaries**:
+- Do not invent plot, setting, facts, files, character relationships, or new requirements.
+- Do not expand the prompt into a long essay.
+- Do not add generic filler like "make it better" unless the user asked for broad polishing.
+- Do not remove important uncertainty. If the user is asking a question, keep it as a question.
+- If the input is already strong, still make it a little more executable instead of returning it unchanged.
 
 **Output Format**:
-\`<instruction>optimized user prompt</instruction>\``;
+- Return only the optimized prompt wrapped in \`<instruction>\` tags.
+- No explanation before or after the tag.
+
+**Examples**:
+
+Input: "第3条删掉 因为白薇没有那么严厉 而且是放松日子"
+Output: <instruction>删掉第3条。理由是白薇在这里不该显得过于严厉，而且这一天整体是放松日子；修改后让氛围更松弛自然，不要把她写成强行压住讨论的人。</instruction>
+
+Input: "这段有点ai 帮我改自然点"
+Output: <instruction>把这段改得更自然，去掉解释感和总结感，保留原本信息量与人物意图。句子要更像正文叙述，不要加新的剧情或设定。</instruction>
+
+Input: "楚逸这里别太嘴碎 但要看出他不放心"
+Output: <instruction>调整楚逸这一段：不要让他说得太碎，但要通过短句、停顿或行动表现出他不放心。保持克制，不要直接替他解释心理。</instruction>
+
+Input: "看看有没有冲突"
+Output: <instruction>检查这段是否和前文设定、人物信息状态、时间线或动机存在冲突。请直接指出问题位置，并给出最小改法。</instruction>`;
 }
 
 export function parseInstructionRefineResponse(responseText: string): {
