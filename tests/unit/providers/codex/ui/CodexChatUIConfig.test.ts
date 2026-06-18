@@ -5,7 +5,8 @@ describe('CodexChatUIConfig', () => {
   describe('getModelOptions', () => {
     it('should return default models when no env vars', () => {
       const options = codexChatUIConfig.getModelOptions({});
-      expect(options).toHaveLength(2);
+      expect(options).toHaveLength(3);
+      expect(options.map(o => o.value)).toContain(CODEX_SPARK_MODEL);
       expect(options.map(o => o.value)).toContain(DEFAULT_CODEX_PRIMARY_MODEL);
       expect(options.map(o => o.value)).toContain('gpt-5.4-mini');
     });
@@ -20,6 +21,11 @@ describe('CodexChatUIConfig', () => {
       });
 
       expect(options).toEqual([
+        {
+          value: CODEX_SPARK_MODEL,
+          label: 'GPT-5.3 Codex Spark',
+          description: 'Spark',
+        },
         {
           value: 'gpt-5.4-mini',
           label: 'GPT-5.4 Mini',
@@ -49,7 +55,7 @@ describe('CodexChatUIConfig', () => {
       });
       expect(options[0].value).toBe('my-custom-model');
       expect(options[0].description).toBe('Custom (env)');
-      expect(options.length).toBe(3);
+      expect(options.length).toBe(4);
     });
 
     it('deduplicates env and settings-defined custom models', () => {
@@ -64,6 +70,7 @@ describe('CodexChatUIConfig', () => {
 
       expect(options.map(option => option.value)).toEqual([
         'my-custom-model',
+        CODEX_SPARK_MODEL,
         'gpt-5.4-mini',
         DEFAULT_CODEX_PRIMARY_MODEL,
         'second-custom-model',
@@ -74,7 +81,7 @@ describe('CodexChatUIConfig', () => {
       const options = codexChatUIConfig.getModelOptions({
         environmentVariables: `OPENAI_MODEL=${DEFAULT_CODEX_PRIMARY_MODEL}`,
       });
-      expect(options.length).toBe(2);
+      expect(options.length).toBe(3);
     });
 
     it('does not surface DeepSeek models through the regular Codex provider', () => {
@@ -170,6 +177,7 @@ describe('CodexChatUIConfig', () => {
   describe('isDefaultModel', () => {
     it('should return true for built-in models', () => {
       expect(codexChatUIConfig.isDefaultModel(DEFAULT_CODEX_PRIMARY_MODEL)).toBe(true);
+      expect(codexChatUIConfig.isDefaultModel(CODEX_SPARK_MODEL)).toBe(true);
       expect(codexChatUIConfig.isDefaultModel('gpt-5.4-mini')).toBe(true);
     });
 
@@ -185,6 +193,7 @@ describe('CodexChatUIConfig', () => {
 
     it('keeps visible models as-is', () => {
       expect(codexChatUIConfig.normalizeModelVariant(DEFAULT_CODEX_PRIMARY_MODEL, {})).toBe(DEFAULT_CODEX_PRIMARY_MODEL);
+      expect(codexChatUIConfig.normalizeModelVariant(CODEX_SPARK_MODEL, {})).toBe(CODEX_SPARK_MODEL);
       expect(codexChatUIConfig.normalizeModelVariant('custom', {
         environmentVariables: 'OPENAI_MODEL=custom',
       })).toBe('custom');

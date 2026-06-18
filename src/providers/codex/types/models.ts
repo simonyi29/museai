@@ -39,6 +39,7 @@ export const FAST_TIER_CODEX_MODEL_LABEL = formatCodexModelLabel(FAST_TIER_CODEX
 export const FAST_TIER_CODEX_DESCRIPTION = `Enable ${FAST_TIER_CODEX_MODEL_LABEL} fast mode for this conversation. Faster responses use more credits.`;
 
 export const DEFAULT_CODEX_MODELS: ProviderUIOption[] = [
+  createCodexModelOption(CODEX_SPARK_MODEL, 'Spark'),
   createCodexModelOption(DEFAULT_CODEX_MINI_MODEL, 'Fast'),
   createCodexModelOption(DEFAULT_CODEX_PRIMARY_MODEL, 'Latest'),
 ];
