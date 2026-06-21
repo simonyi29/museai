@@ -110,6 +110,7 @@ export interface InputControllerDeps {
   ensureServiceInitialized?: () => Promise<boolean>;
   openConversation?: (conversationId: string) => Promise<void>;
   onForkAll?: () => Promise<void>;
+  runInspirationCollection?: (topic: string) => Promise<{ filePath: string; sourceCount: number }>;
   restorePrePlanPermissionModeIfNeeded?: () => void;
 }
 
@@ -1731,6 +1732,27 @@ export class InputController {
           return;
         }
         await this.deps.onForkAll();
+        break;
+      }
+      case 'collect': {
+        const topic = args.trim();
+        if (!topic) {
+          new Notice('请输入要采集的主题，例如：/collect 科幻');
+          return;
+        }
+        if (!this.deps.runInspirationCollection) {
+          new Notice('素材采集服务不可用。');
+          return;
+        }
+
+        try {
+          new Notice(`开始采集素材：${topic}`);
+          const result = await this.deps.runInspirationCollection(topic);
+          new Notice(`素材采集完成：${result.filePath}（${result.sourceCount} 个来源）`);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          new Notice(`素材采集失败：${message}`);
+        }
         break;
       }
       default: {

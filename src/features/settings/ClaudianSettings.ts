@@ -427,6 +427,76 @@ export class ClaudianSettingTab extends PluginSettingTab {
         });
       });
 
+    new Setting(container).setName(t('settings.inspirationCollector')).setHeading();
+
+    new Setting(container)
+      .setName(t('settings.inspirationCollectorEnabled.name'))
+      .setDesc(t('settings.inspirationCollectorEnabled.desc'))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.creativeInspirationCollector.enabled)
+          .onChange(async (value) => {
+            this.plugin.settings.creativeInspirationCollector.enabled = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(container)
+      .setName(t('settings.inspirationCollectorSaveDirectory.name'))
+      .setDesc(t('settings.inspirationCollectorSaveDirectory.desc'))
+      .addText((text) => {
+        text
+          .setPlaceholder('采集')
+          .setValue(this.plugin.settings.creativeInspirationCollector.saveDirectory)
+          .onChange(async (value) => {
+            this.plugin.settings.creativeInspirationCollector.saveDirectory = value.trim() || '采集';
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(container)
+      .setName(t('settings.inspirationCollectorWhitelist.name'))
+      .setDesc(t('settings.inspirationCollectorWhitelist.desc'))
+      .addTextArea((text) => {
+        text
+          .setPlaceholder('example.com\nexample.org')
+          .setValue(this.plugin.settings.creativeInspirationCollector.whitelistDomains.join('\n'))
+          .onChange(async (value) => {
+            this.plugin.settings.creativeInspirationCollector.whitelistDomains = value
+              .split(/\r?\n/)
+              .map((entry) => entry.trim())
+              .filter((entry) => entry.length > 0);
+            await this.plugin.saveSettings();
+          });
+        text.inputEl.rows = 3;
+      });
+
+    new Setting(container)
+      .setName(t('settings.inspirationCollectorMaxResults.name'))
+      .setDesc(t('settings.inspirationCollectorMaxResults.desc'))
+      .addSlider((slider) => {
+        slider
+          .setLimits(5, 50, 5)
+          .setValue(this.plugin.settings.creativeInspirationCollector.maxResults)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.creativeInspirationCollector.maxResults = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(container)
+      .setName(t('settings.inspirationCollectorAiSynthesis.name'))
+      .setDesc(t('settings.inspirationCollectorAiSynthesis.desc'))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.creativeInspirationCollector.aiSynthesisEnabled)
+          .onChange(async (value) => {
+            this.plugin.settings.creativeInspirationCollector.aiSynthesisEnabled = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
     // --- Input ---
 
     new Setting(container).setName(t('settings.input')).setHeading();

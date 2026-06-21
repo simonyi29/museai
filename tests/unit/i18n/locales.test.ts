@@ -78,6 +78,20 @@ const localizedKeys = [
   'settings.requireCommandOrControlEnterToSend.desc',
 ] as const;
 
+const inspirationCollectorKeys = [
+  'settings.inspirationCollector',
+  'settings.inspirationCollectorEnabled.name',
+  'settings.inspirationCollectorEnabled.desc',
+  'settings.inspirationCollectorSaveDirectory.name',
+  'settings.inspirationCollectorSaveDirectory.desc',
+  'settings.inspirationCollectorWhitelist.name',
+  'settings.inspirationCollectorWhitelist.desc',
+  'settings.inspirationCollectorMaxResults.name',
+  'settings.inspirationCollectorMaxResults.desc',
+  'settings.inspirationCollectorAiSynthesis.name',
+  'settings.inspirationCollectorAiSynthesis.desc',
+] as const;
+
 const staleBangBashDesc =
   'Type ! on empty input to enter bash mode. Runs commands directly via Node.js child_process.';
 
@@ -130,5 +144,11 @@ describe('locale files', () => {
     expect(english['settings.hiddenSlashCommands.desc']).toBe(
       'Hide specific commands and skills from the dropdown. Useful for hiding Claude Code entries that are not relevant to MuseAI. Enter names without the leading slash, one per line.',
     );
+  });
+
+  it('includes creative inspiration collector settings copy', () => {
+    for (const key of inspirationCollectorKeys) {
+      expect(english[key]).toBeDefined();
+    }
   });
 });

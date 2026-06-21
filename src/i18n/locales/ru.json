@@ -95,6 +95,27 @@
       "name": "Папка медиафайлов",
       "desc": "Папка с вложениями/изображениями. Когда заметки используют ![[image.jpg]], Claude будет искать здесь. Оставьте пустым для корня хранилища."
     },
+    "inspirationCollector": "Creative inspiration collection",
+    "inspirationCollectorEnabled": {
+      "name": "Enable inspiration collection",
+      "desc": "Collect public web signals for a topic and save one Markdown inspiration report."
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "Save directory",
+      "desc": "Vault folder where collected topic folders are created."
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "Whitelist domains",
+      "desc": "One domain per line. These domains guide and filter preferred collection sources."
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "Maximum results",
+      "desc": "Maximum source candidates to keep for one collection run."
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI synthesis",
+      "desc": "Ask the active AI provider to synthesize source signals into creative inspiration."
+    },
     "systemPrompt": {
       "name": "Пользовательский системный промпт",
       "desc": "Дополнительные инструкции, добавляемые к системному промпту по умолчанию"

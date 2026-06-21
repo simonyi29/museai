@@ -95,6 +95,27 @@
       "name": "Carpeta de medios",
       "desc": "Carpeta que contiene archivos adjuntos/imagenes. Cuando las notas usan ![[image.jpg]], Claude buscará aquí. Dejar vacío para la raíz del depósito."
     },
+    "inspirationCollector": "Creative inspiration collection",
+    "inspirationCollectorEnabled": {
+      "name": "Enable inspiration collection",
+      "desc": "Collect public web signals for a topic and save one Markdown inspiration report."
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "Save directory",
+      "desc": "Vault folder where collected topic folders are created."
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "Whitelist domains",
+      "desc": "One domain per line. These domains guide and filter preferred collection sources."
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "Maximum results",
+      "desc": "Maximum source candidates to keep for one collection run."
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI synthesis",
+      "desc": "Ask the active AI provider to synthesize source signals into creative inspiration."
+    },
     "systemPrompt": {
       "name": "Prompt de sistema personalizado",
       "desc": "Instrucciones adicionales añadidas al prompt de sistema por defecto"

@@ -18,6 +18,13 @@ export const DEFAULT_CLAUDIAN_SETTINGS: ClaudianSettings = {
   mediaFolder: '',
   systemPrompt: '',
   persistentExternalContextPaths: [],
+  creativeInspirationCollector: {
+    enabled: false,
+    saveDirectory: '采集',
+    whitelistDomains: [],
+    maxResults: 20,
+    aiSynthesisEnabled: true,
+  },
 
   sharedEnvironmentVariables: '',
   envSnippets: [],

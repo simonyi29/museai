@@ -73,6 +73,15 @@ export interface InstructionRefineResult {
   error?: string;               // Error message (if failed)
 }
 
+/** Creative inspiration collector settings. */
+export interface CreativeInspirationCollectorSettings {
+  enabled: boolean;
+  saveDirectory: string;
+  whitelistDomains: string[];
+  maxResults: number;
+  aiSynthesisEnabled: boolean;
+}
+
 /** Permission mode for tool execution. */
 export type PermissionMode = 'yolo' | 'plan' | 'normal';
 
@@ -112,6 +121,7 @@ export interface ClaudianSettings {
   mediaFolder: string;
   systemPrompt: string;
   persistentExternalContextPaths: string[];
+  creativeInspirationCollector: CreativeInspirationCollectorSettings;
 
   // Environment
   sharedEnvironmentVariables: string;

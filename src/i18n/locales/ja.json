@@ -95,6 +95,27 @@
       "name": "メディアフォルダ",
       "desc": "添付ファイル/画像を格納するフォルダ。ノートが ![[image.jpg]] を使用する場合、Claude はここで探します。空欄でリポジトリのルートを使用。"
     },
+    "inspirationCollector": "Creative inspiration collection",
+    "inspirationCollectorEnabled": {
+      "name": "Enable inspiration collection",
+      "desc": "Collect public web signals for a topic and save one Markdown inspiration report."
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "Save directory",
+      "desc": "Vault folder where collected topic folders are created."
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "Whitelist domains",
+      "desc": "One domain per line. These domains guide and filter preferred collection sources."
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "Maximum results",
+      "desc": "Maximum source candidates to keep for one collection run."
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI synthesis",
+      "desc": "Ask the active AI provider to synthesize source signals into creative inspiration."
+    },
     "systemPrompt": {
       "name": "カスタムシステムプロンプト",
       "desc": "デフォルトのシステムプロンプトに追加される追加指示"

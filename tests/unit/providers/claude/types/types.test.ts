@@ -106,6 +106,13 @@ describe('types.ts', () => {
         deferMathRenderingDuringStreaming: true,
         expandFileEditsByDefault: false,
         chatViewPlacement: 'right-sidebar',
+        creativeInspirationCollector: {
+          enabled: false,
+          saveDirectory: '采集',
+          whitelistDomains: [],
+          maxResults: 20,
+          aiSynthesisEnabled: true,
+        },
         hiddenProviderCommands: {
           claude: [],
           codex: [],
@@ -161,6 +168,13 @@ describe('types.ts', () => {
         deferMathRenderingDuringStreaming: true,
         expandFileEditsByDefault: false,
         chatViewPlacement: 'right-sidebar',
+        creativeInspirationCollector: {
+          enabled: false,
+          saveDirectory: '采集',
+          whitelistDomains: [],
+          maxResults: 20,
+          aiSynthesisEnabled: true,
+        },
         hiddenProviderCommands: {
           claude: [],
           codex: [],
@@ -217,6 +231,13 @@ describe('types.ts', () => {
         deferMathRenderingDuringStreaming: true,
         expandFileEditsByDefault: true,
         chatViewPlacement: 'right-sidebar',
+        creativeInspirationCollector: {
+          enabled: false,
+          saveDirectory: '采集',
+          whitelistDomains: [],
+          maxResults: 20,
+          aiSynthesisEnabled: true,
+        },
         hiddenProviderCommands: {
           claude: [],
           codex: [],

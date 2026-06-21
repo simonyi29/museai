@@ -98,6 +98,14 @@ describe('builtInCommands', () => {
       expect(detectBuiltInCommand('/FORK')).not.toBeNull();
       expect(detectBuiltInCommand('/Fork')).not.toBeNull();
     });
+
+    it('detects /collect command with a topic', () => {
+      const result = detectBuiltInCommand('/collect 科幻');
+      expect(result).not.toBeNull();
+      expect(result?.command.name).toBe('collect');
+      expect(result?.command.action).toBe('collect');
+      expect(result?.args).toBe('科幻');
+    });
   });
 
   describe('getBuiltInCommandsForDropdown', () => {
@@ -155,6 +163,15 @@ describe('builtInCommands', () => {
       expect(forkCmd?.hasArgs).toBeUndefined();
     });
 
+    it('has collect command that accepts a topic', () => {
+      const collectCmd = BUILT_IN_COMMANDS.find((c) => c.name === 'collect');
+      expect(collectCmd).toBeDefined();
+      expect(collectCmd?.aliases).toContain('collect-material');
+      expect(collectCmd?.action).toBe('collect');
+      expect(collectCmd?.hasArgs).toBe(true);
+      expect(collectCmd?.argumentHint).toBe('[topic]');
+    });
+
     it('clear has no provider restriction', () => {
       const clearCmd = BUILT_IN_COMMANDS.find((c) => c.name === 'clear');
       expect(clearCmd?.requiredCapability).toBeUndefined();
@@ -202,8 +219,8 @@ describe('builtInCommands', () => {
 
     it('returns only commands supported by codex capabilities', () => {
       const commands = getBuiltInCommandsForDropdown('codex');
-      expect(commands.length).toBe(4);
-      expect(commands.map(c => c.name)).toEqual(['clear', 'add-dir', 'resume', 'fork']);
+      expect(commands.length).toBe(5);
+      expect(commands.map(c => c.name)).toEqual(['clear', 'add-dir', 'resume', 'fork', 'collect']);
     });
   });
 

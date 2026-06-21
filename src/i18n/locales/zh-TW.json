@@ -95,6 +95,27 @@
       "name": "媒體資料夾",
       "desc": "存放附件/圖片的資料夾。當筆記使用 ![[image.jpg]] 時，Claude 會在此查找。留空使用儲存庫根目錄。"
     },
+    "inspirationCollector": "創作靈感採集",
+    "inspirationCollectorEnabled": {
+      "name": "啟用靈感採集",
+      "desc": "圍繞主題採集公開網路線索，並儲存為一份 Markdown 靈感報告。"
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "儲存目錄",
+      "desc": "用於建立採集主題資料夾的儲存庫目錄。"
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "白名單網域",
+      "desc": "每行一個網域。這些網域用於引導和篩選優先採集來源。"
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "最大結果數",
+      "desc": "單次採集最多保留的來源候選數量。"
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI 綜合",
+      "desc": "請目前 AI 提供商將來源線索綜合為創作靈感。"
+    },
     "systemPrompt": {
       "name": "自訂系統提示詞",
       "desc": "附加到預設系統提示詞的額外指令"

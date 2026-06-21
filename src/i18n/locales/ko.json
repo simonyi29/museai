@@ -95,6 +95,27 @@
       "name": "미디어 폴더",
       "desc": "첨부 파일/이미지를 저장할 폴더. 노트가 ![[image.jpg]]를 사용할 때 Claude가 여기서 찾습니다. 비워두면 저장소 루트 사용."
     },
+    "inspirationCollector": "Creative inspiration collection",
+    "inspirationCollectorEnabled": {
+      "name": "Enable inspiration collection",
+      "desc": "Collect public web signals for a topic and save one Markdown inspiration report."
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "Save directory",
+      "desc": "Vault folder where collected topic folders are created."
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "Whitelist domains",
+      "desc": "One domain per line. These domains guide and filter preferred collection sources."
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "Maximum results",
+      "desc": "Maximum source candidates to keep for one collection run."
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI synthesis",
+      "desc": "Ask the active AI provider to synthesize source signals into creative inspiration."
+    },
     "systemPrompt": {
       "name": "커스텀 시스템 프롬프트",
       "desc": "기본 시스템 프롬프트에 추가되는 추가 지침"

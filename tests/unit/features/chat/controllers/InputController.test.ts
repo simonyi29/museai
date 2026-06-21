@@ -1827,6 +1827,64 @@ describe('InputController - Message Queue', () => {
     });
   });
 
+  describe('Built-in commands - /collect', () => {
+    beforeEach(() => {
+      mockNotice.mockClear();
+    });
+
+    it('should run inspiration collection with the provided topic', async () => {
+      const runInspirationCollection = jest.fn().mockResolvedValue({
+        filePath: '采集/科幻/2026-06-21 科幻素材采集.md',
+        sourceCount: 3,
+      });
+      deps.runInspirationCollection = runInspirationCollection;
+      inputEl.value = '/collect 科幻';
+      controller = new InputController(deps);
+
+      await controller.sendMessage();
+
+      expect(runInspirationCollection).toHaveBeenCalledWith('科幻');
+      expect(mockNotice).toHaveBeenCalledWith('开始采集素材：科幻');
+      expect(mockNotice).toHaveBeenCalledWith('素材采集完成：采集/科幻/2026-06-21 科幻素材采集.md（3 个来源）');
+      expect(inputEl.value).toBe('');
+    });
+
+    it('should show usage when /collect is called without a topic', async () => {
+      const runInspirationCollection = jest.fn();
+      deps.runInspirationCollection = runInspirationCollection;
+      inputEl.value = '/collect';
+      controller = new InputController(deps);
+
+      await controller.sendMessage();
+
+      expect(runInspirationCollection).not.toHaveBeenCalled();
+      expect(mockNotice).toHaveBeenCalledWith('请输入要采集的主题，例如：/collect 科幻');
+      expect(inputEl.value).toBe('');
+    });
+
+    it('should show a notice when collection service is not available', async () => {
+      deps.runInspirationCollection = undefined;
+      inputEl.value = '/collect 科幻';
+      controller = new InputController(deps);
+
+      await controller.sendMessage();
+
+      expect(mockNotice).toHaveBeenCalledWith('素材采集服务不可用。');
+      expect(inputEl.value).toBe('');
+    });
+
+    it('should show a failure notice when collection throws', async () => {
+      deps.runInspirationCollection = jest.fn().mockRejectedValue(new Error('No source candidates were found.'));
+      inputEl.value = '/collect 科幻';
+      controller = new InputController(deps);
+
+      await controller.sendMessage();
+
+      expect(mockNotice).toHaveBeenCalledWith('素材采集失败：No source candidates were found.');
+      expect(inputEl.value).toBe('');
+    });
+  });
+
   describe('Cancel streaming - restore behavior', () => {
     it('should set cancelRequested and call agent cancel', () => {
       deps.state.isStreaming = true;

@@ -95,6 +95,27 @@
       "name": "Media folder",
       "desc": "Folder containing attachments/images. When notes use ![[image.jpg]], Claude will look here. Leave empty for vault root."
     },
+    "inspirationCollector": "Creative inspiration collection",
+    "inspirationCollectorEnabled": {
+      "name": "Enable inspiration collection",
+      "desc": "Collect public web signals for a topic and save one Markdown inspiration report."
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "Save directory",
+      "desc": "Vault folder where collected topic folders are created."
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "Whitelist domains",
+      "desc": "One domain per line. These domains guide and filter preferred collection sources."
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "Maximum results",
+      "desc": "Maximum source candidates to keep for one collection run."
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI synthesis",
+      "desc": "Ask the active AI provider to synthesize source signals into creative inspiration."
+    },
     "systemPrompt": {
       "name": "Custom system prompt",
       "desc": "Additional instructions appended to the default system prompt"

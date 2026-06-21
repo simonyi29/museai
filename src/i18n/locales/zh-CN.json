@@ -95,6 +95,27 @@
       "name": "媒体文件夹",
       "desc": "存放附件/图片的文件夹。当笔记使用 ![[image.jpg]] 时，Claude 会在此查找。留空使用仓库根目录。"
     },
+    "inspirationCollector": "创作灵感采集",
+    "inspirationCollectorEnabled": {
+      "name": "启用灵感采集",
+      "desc": "围绕主题采集公开网络线索，并保存为一份 Markdown 灵感报告。"
+    },
+    "inspirationCollectorSaveDirectory": {
+      "name": "保存目录",
+      "desc": "用于创建采集主题文件夹的仓库目录。"
+    },
+    "inspirationCollectorWhitelist": {
+      "name": "白名单域名",
+      "desc": "每行一个域名。这些域名用于引导和筛选优先采集来源。"
+    },
+    "inspirationCollectorMaxResults": {
+      "name": "最大结果数",
+      "desc": "单次采集最多保留的来源候选数量。"
+    },
+    "inspirationCollectorAiSynthesis": {
+      "name": "AI 综合",
+      "desc": "请当前 AI 提供商将来源线索综合为创作灵感。"
+    },
     "systemPrompt": {
       "name": "自定义系统提示词",
       "desc": "附加到默认系统提示词的额外指令"
