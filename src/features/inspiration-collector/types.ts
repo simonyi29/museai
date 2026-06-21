@@ -15,6 +15,18 @@ export interface ExtractedSourceContext extends SourceCandidate {
   text?: string;
 }
 
+export interface CollectionIndexEntry {
+  title: string;
+  domain: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+export interface CollectionIndex {
+  topic: string;
+  seenUrls: Record<string, CollectionIndexEntry>;
+}
+
 export interface SourceSearchProvider {
   search(topic: string, options: { maxResults: number; domains?: string[] }): Promise<SourceCandidate[]>;
 }
@@ -39,6 +51,15 @@ export interface AiTextGenerator {
 }
 
 export interface CollectorStorage {
+  loadIndex(input: {
+    saveDirectory: string;
+    topic: string;
+  }): Promise<CollectionIndex>;
+  saveIndex(input: {
+    saveDirectory: string;
+    topic: string;
+    index: CollectionIndex;
+  }): Promise<void>;
   writeReport(input: {
     saveDirectory: string;
     topic: string;
@@ -48,6 +69,7 @@ export interface CollectorStorage {
 }
 
 export interface CollectionResult {
-  filePath: string;
+  filePath?: string;
   sourceCount: number;
+  skippedSourceCount: number;
 }

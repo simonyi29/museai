@@ -39,3 +39,7 @@ export function buildTopicFolderPath(saveDirectory: string, topic: string): stri
 export function buildReportBaseName(topic: string, now: Date): string {
   return `${formatCollectorDate(now)} ${normalizeTopicSlug(topic)}素材采集.md`;
 }
+
+export function buildTopicIndexPath(saveDirectory: string, topic: string): string {
+  return `${buildTopicFolderPath(saveDirectory, topic)}/.museai-index.json`;
+}

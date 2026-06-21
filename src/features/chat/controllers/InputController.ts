@@ -27,6 +27,7 @@ import type {
 import { TOOL_EXIT_PLAN_MODE } from '../../../core/tools/toolNames';
 import type { ApprovalDecision, ChatMessage, ExitPlanModeDecision, StreamChunk } from '../../../core/types';
 import type ClaudianPlugin from '../../../main';
+import type { CollectionResult } from '../../inspiration-collector';
 import { CODEX_SPARK_MODEL } from '../../../providers/codex/types/models';
 import { ResumeSessionDropdown } from '../../../shared/components/ResumeSessionDropdown';
 import { InstructionModal } from '../../../shared/modals/InstructionConfirmModal';
@@ -110,7 +111,7 @@ export interface InputControllerDeps {
   ensureServiceInitialized?: () => Promise<boolean>;
   openConversation?: (conversationId: string) => Promise<void>;
   onForkAll?: () => Promise<void>;
-  runInspirationCollection?: (topic: string) => Promise<{ filePath: string; sourceCount: number }>;
+  runInspirationCollection?: (topic: string) => Promise<CollectionResult>;
   restorePrePlanPermissionModeIfNeeded?: () => void;
 }
 
@@ -1748,7 +1749,11 @@ export class InputController {
         try {
           new Notice(`开始采集素材：${topic}`);
           const result = await this.deps.runInspirationCollection(topic);
-          new Notice(`素材采集完成：${result.filePath}（${result.sourceCount} 个来源）`);
+          if (result.sourceCount === 0) {
+            new Notice(`素材采集完成：没有发现新增素材，已跳过重复 ${result.skippedSourceCount} 个。`);
+          } else {
+            new Notice(`素材采集完成：新增 ${result.sourceCount} 个，跳过重复 ${result.skippedSourceCount} 个。已保存到：${result.filePath}`);
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
           new Notice(`素材采集失败：${message}`);

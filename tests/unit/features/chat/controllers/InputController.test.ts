@@ -1836,6 +1836,7 @@ describe('InputController - Message Queue', () => {
       const runInspirationCollection = jest.fn().mockResolvedValue({
         filePath: '采集/科幻/2026-06-21 科幻素材采集.md',
         sourceCount: 3,
+        skippedSourceCount: 2,
       });
       deps.runInspirationCollection = runInspirationCollection;
       inputEl.value = '/collect 科幻';
@@ -1845,7 +1846,23 @@ describe('InputController - Message Queue', () => {
 
       expect(runInspirationCollection).toHaveBeenCalledWith('科幻');
       expect(mockNotice).toHaveBeenCalledWith('开始采集素材：科幻');
-      expect(mockNotice).toHaveBeenCalledWith('素材采集完成：采集/科幻/2026-06-21 科幻素材采集.md（3 个来源）');
+      expect(mockNotice).toHaveBeenCalledWith('素材采集完成：新增 3 个，跳过重复 2 个。已保存到：采集/科幻/2026-06-21 科幻素材采集.md');
+      expect(inputEl.value).toBe('');
+    });
+
+    it('should show a no-new-sources notice when incremental collection finds only duplicates', async () => {
+      const runInspirationCollection = jest.fn().mockResolvedValue({
+        sourceCount: 0,
+        skippedSourceCount: 5,
+      });
+      deps.runInspirationCollection = runInspirationCollection;
+      inputEl.value = '/collect 科幻';
+      controller = new InputController(deps);
+
+      await controller.sendMessage();
+
+      expect(runInspirationCollection).toHaveBeenCalledWith('科幻');
+      expect(mockNotice).toHaveBeenCalledWith('素材采集完成：没有发现新增素材，已跳过重复 5 个。');
       expect(inputEl.value).toBe('');
     });
 

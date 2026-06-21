@@ -41,6 +41,7 @@ import {
   LightweightWebContextExtractor,
   MarkdownReportSynthesizer,
   PublicWebSearchProvider,
+  type CollectionResult,
   type ReportSynthesizer,
   SourceCandidateService,
 } from './features/inspiration-collector';
@@ -420,7 +421,7 @@ export default class ClaudianPlugin extends Plugin {
     });
   }
 
-  async runInspirationCollection(topic: string): Promise<{ filePath: string; sourceCount: number }> {
+  async runInspirationCollection(topic: string): Promise<CollectionResult> {
     return this.getInspirationCollector().collect(
       topic,
       this.settings.creativeInspirationCollector,

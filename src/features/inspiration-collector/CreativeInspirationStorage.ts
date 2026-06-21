@@ -1,11 +1,13 @@
 import {
   buildReportBaseName,
+  buildTopicIndexPath,
   buildTopicFolderPath,
 } from './path';
-import type { CollectorStorage } from './types';
+import type { CollectionIndex, CollectorStorage } from './types';
 
 interface VaultWriter {
   exists(path: string): Promise<boolean>;
+  read(path: string): Promise<string>;
   write(path: string, content: string): Promise<void>;
 }
 
@@ -18,6 +20,43 @@ function addTimeSuffix(fileName: string, now: Date, conflictIndex: number): stri
 
 export class CreativeInspirationStorage implements CollectorStorage {
   constructor(private readonly adapter: VaultWriter) {}
+
+  async loadIndex(input: {
+    saveDirectory: string;
+    topic: string;
+  }): Promise<CollectionIndex> {
+    const indexPath = buildTopicIndexPath(input.saveDirectory, input.topic);
+    if (!(await this.adapter.exists(indexPath))) {
+      return {
+        topic: input.topic,
+        seenUrls: {},
+      };
+    }
+
+    try {
+      const parsed = JSON.parse(await this.adapter.read(indexPath)) as Partial<CollectionIndex>;
+      return {
+        topic: typeof parsed.topic === 'string' ? parsed.topic : input.topic,
+        seenUrls: parsed.seenUrls && typeof parsed.seenUrls === 'object' ? parsed.seenUrls : {},
+      };
+    } catch {
+      return {
+        topic: input.topic,
+        seenUrls: {},
+      };
+    }
+  }
+
+  async saveIndex(input: {
+    saveDirectory: string;
+    topic: string;
+    index: CollectionIndex;
+  }): Promise<void> {
+    await this.adapter.write(
+      buildTopicIndexPath(input.saveDirectory, input.topic),
+      `${JSON.stringify(input.index, null, 2)}\n`,
+    );
+  }
 
   async writeReport(input: {
     saveDirectory: string;
