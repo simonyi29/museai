@@ -16,9 +16,16 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+const defaultFetch: typeof fetch = (input, init) => {
+  if (typeof window !== 'undefined') {
+    return window.fetch(input, init);
+  }
+  return fetch(input, init);
+};
+
 export class LightweightWebContextExtractor implements WebContextExtractor {
   constructor(
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly fetchImpl: typeof fetch = defaultFetch,
     private readonly maxCharacters = 4_000,
   ) {}
 

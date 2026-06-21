@@ -145,9 +145,16 @@ const SEARCH_ENDPOINTS: SearchEndpoint[] = [
 const timerHost: Pick<typeof globalThis, 'clearTimeout' | 'setTimeout'> =
   typeof window !== 'undefined' ? window : globalThis;
 
+const defaultFetch: typeof fetch = (input, init) => {
+  if (typeof window !== 'undefined') {
+    return window.fetch(input, init);
+  }
+  return fetch(input, init);
+};
+
 export class PublicWebSearchProvider implements SourceSearchProvider {
   constructor(
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly fetchImpl: typeof fetch = defaultFetch,
     private readonly requestTimeoutMs = 8_000,
   ) {}
 

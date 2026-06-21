@@ -1,6 +1,31 @@
 import { PublicWebSearchProvider } from '@/features/inspiration-collector/PublicWebSearchProvider';
 
 describe('PublicWebSearchProvider', () => {
+  const originalWindowFetch = window.fetch;
+
+  afterEach(() => {
+    window.fetch = originalWindowFetch;
+  });
+
+  it('uses window.fetch with the correct Window receiver by default', async () => {
+    window.fetch = jest.fn(function (this: Window) {
+      if (this !== window) {
+        throw new TypeError('Illegal invocation');
+      }
+      return Promise.resolve(new Response(`
+        <li class="b_algo">
+          <h2><a href="https://example.com/scifi">科幻素材</a></h2>
+          <p>星际殖民与 AI 冲突。</p>
+        </li>
+      `, { status: 200 }));
+    }) as unknown as typeof fetch;
+    const provider = new PublicWebSearchProvider();
+
+    const results = await provider.search('科幻', { maxResults: 1 });
+
+    expect(results[0].url).toBe('https://example.com/scifi');
+  });
+
   it('falls back to Bing when DuckDuckGo is unavailable', async () => {
     const fetchImpl = jest.fn()
       .mockRejectedValueOnce(new Error('timeout'))
