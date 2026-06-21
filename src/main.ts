@@ -140,7 +140,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'check-ai-flavor',
-      name: 'MuseAI: 检查当前章节 AI 味',
+      name: 'MuseAI: Check current chapter AI flavor',
       editorCallback: async (editor: Editor) => {
         const markdown = typeof editor.getValue === 'function'
           ? editor.getValue()
@@ -159,7 +159,7 @@ export default class ClaudianPlugin extends Plugin {
 
     this.addCommand({
       id: 'rewrite-selection-ai-flavor',
-      name: 'MuseAI: 去 AI 味改写选中文本',
+      name: 'MuseAI: Rewrite selected text to reduce AI flavor',
       editorCallback: async (editor: Editor) => {
         const selectedText = editor.getSelection();
         if (!selectedText.trim()) {
