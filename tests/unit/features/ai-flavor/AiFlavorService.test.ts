@@ -77,6 +77,43 @@ describe('AiFlavorService', () => {
     expect(result.score).toBeLessThanOrEqual(30);
     expect(result.text).toBe('夜里风很冷，他把话咽回去，只问她要不要再走一段。');
   });
+
+  it('adds an LLM second-pass review and merges it with the local score', async () => {
+    const generator = {
+      generate: jest.fn().mockResolvedValue(JSON.stringify({
+        score: 72,
+        reasons: ['片段可预测性高', '段落节奏过于平滑'],
+        segments: [
+          { excerpt: '他看着桌面，心里明白这意味着新的风险。', score: 80, reason: '解释型旁白替代了场景推进。' },
+        ],
+      })),
+    };
+    const service = new AiFlavorService(generator);
+
+    const analysis = await service.analyzeWithAi('他看着桌面，心里明白这意味着新的风险。');
+
+    expect(generator.generate).toHaveBeenCalledTimes(1);
+    expect(generator.generate.mock.calls[0][0].prompt).toContain('perplexity');
+    expect(analysis.mode).toBe('hybrid');
+    expect(analysis.score).toBeGreaterThanOrEqual(50);
+    expect(analysis.reasons).toEqual(expect.arrayContaining([
+      'AI评审：片段可预测性高',
+      'AI评审：段落节奏过于平滑',
+    ]));
+    expect(analysis.aiReview?.segments[0].reason).toBe('解释型旁白替代了场景推进。');
+  });
+
+  it('falls back to local analysis when LLM review is unavailable', async () => {
+    const generator = {
+      generate: jest.fn().mockRejectedValue(new Error('model unavailable')),
+    };
+    const service = new AiFlavorService(generator);
+
+    const analysis = await service.analyzeWithAi('雨停了，他把信塞回口袋。');
+
+    expect(analysis.mode).toBe('local');
+    expect(analysis.reasons).toContain('AI评审不可用：model unavailable');
+  });
 });
 
 describe('extractCurrentMarkdownChapter', () => {

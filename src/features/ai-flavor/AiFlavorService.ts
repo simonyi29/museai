@@ -4,12 +4,26 @@ export interface AiFlavorAnalysis {
   score: number;
   level: 'low' | 'medium' | 'high';
   reasons: string[];
+  mode?: 'local' | 'hybrid';
+  aiReview?: AiFlavorAiReview;
 }
 
 export interface AiFlavorRewriteResult {
   text: string;
   score: number;
   attempts: number;
+}
+
+export interface AiFlavorAiReviewSegment {
+  excerpt: string;
+  score: number;
+  reason: string;
+}
+
+export interface AiFlavorAiReview {
+  score: number;
+  reasons: string[];
+  segments: AiFlavorAiReviewSegment[];
 }
 
 const FORMULAIC_PATTERNS: Array<{ pattern: RegExp; reason: string; weight: number }> = [
@@ -97,6 +111,65 @@ function buildRewritePrompt(text: string, currentScore: number, targetScore: num
     '原文：',
     text,
   ].join('\n');
+}
+
+function buildAiReviewPrompt(text: string, localAnalysis: AiFlavorAnalysis): string {
+  return [
+    '请对下面中文小说片段做 AI 味二次评审。',
+    '评审参考主流 AI 检测解释维度：perplexity / 可预测性、burstiness / 句式波动、重复短语和模式化表达、个人风格缺失。',
+    '请按小片段判断，不要只给整篇笼统结论。',
+    '',
+    `本地规则初评分：${localAnalysis.score}%。`,
+    `本地命中原因：${localAnalysis.reasons.join('、')}`,
+    '',
+    '只输出 JSON，不要 Markdown，不要解释。格式：',
+    '{"score":0,"reasons":["原因1"],"segments":[{"excerpt":"原文短片段","score":0,"reason":"片段原因"}]}',
+    '',
+    '评分要求：0-100，30 以下为低 AI 味，30-59 为中，60 以上为高。',
+    '',
+    '待评审文本：',
+    text.slice(0, 6000),
+  ].join('\n');
+}
+
+function parseJsonObject(text: string): unknown {
+  const stripped = stripResponse(text);
+  try {
+    return JSON.parse(stripped);
+  } catch {
+    const match = stripped.match(/\{[\s\S]*\}/u);
+    if (!match) throw new Error('AI review did not return JSON');
+    return JSON.parse(match[0]);
+  }
+}
+
+function parseAiReview(text: string): AiFlavorAiReview {
+  const parsed = parseJsonObject(text) as Partial<AiFlavorAiReview>;
+  const score = typeof parsed.score === 'number' ? clampScore(parsed.score) : 0;
+  const reasons = Array.isArray(parsed.reasons)
+    ? parsed.reasons.filter((reason): reason is string => typeof reason === 'string' && reason.trim().length > 0)
+    : [];
+  const segments = Array.isArray(parsed.segments)
+    ? parsed.segments
+      .map((segment) => segment as Partial<AiFlavorAiReviewSegment>)
+      .filter((segment) => typeof segment.excerpt === 'string' && typeof segment.reason === 'string')
+      .map((segment) => ({
+        excerpt: segment.excerpt ?? '',
+        score: typeof segment.score === 'number' ? clampScore(segment.score) : score,
+        reason: segment.reason ?? '',
+      }))
+      .slice(0, 5)
+    : [];
+
+  return {
+    score,
+    reasons: reasons.slice(0, 5),
+    segments,
+  };
+}
+
+function levelForScore(score: number): AiFlavorAnalysis['level'] {
+  return score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
 }
 
 export function extractCurrentMarkdownChapter(markdown: string, cursorLine: number): string {
@@ -209,9 +282,46 @@ export class AiFlavorService {
     const finalScore = clampScore(score);
     return {
       score: finalScore,
-      level: finalScore >= 60 ? 'high' : finalScore >= 30 ? 'medium' : 'low',
+      level: levelForScore(finalScore),
       reasons: reasons.size > 0 ? Array.from(reasons) : ['未发现明显模板化特征'],
+      mode: 'local',
     };
+  }
+
+  async analyzeWithAi(text: string): Promise<AiFlavorAnalysis> {
+    const local = this.analyze(text);
+    if (!this.generator) {
+      return local;
+    }
+
+    try {
+      const rawReview = await this.generator.generate({
+        systemPrompt: '你是 MuseAI 的中文小说 AI 味二次评审器。你必须只输出 JSON。',
+        prompt: buildAiReviewPrompt(text, local),
+      });
+      const aiReview = parseAiReview(rawReview);
+      const score = clampScore(Math.max(local.score, Math.round(local.score * 0.45 + aiReview.score * 0.55)));
+      return {
+        score,
+        level: levelForScore(score),
+        mode: 'hybrid',
+        reasons: [
+          ...local.reasons,
+          ...aiReview.reasons.map((reason) => `AI评审：${reason}`),
+        ],
+        aiReview,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        ...local,
+        mode: 'local',
+        reasons: [
+          ...local.reasons,
+          `AI评审不可用：${message}`,
+        ],
+      };
+    }
   }
 
   async rewriteBelowTarget(

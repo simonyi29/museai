@@ -141,15 +141,17 @@ export default class ClaudianPlugin extends Plugin {
     this.addCommand({
       id: 'check-ai-flavor',
       name: 'MuseAI: 检查当前章节 AI 味',
-      editorCallback: (editor: Editor) => {
+      editorCallback: async (editor: Editor) => {
         const markdown = typeof editor.getValue === 'function'
           ? editor.getValue()
           : Array.from({ length: editor.lineCount() }, (_, line) => editor.getLine(line)).join('\n');
         const cursor = editor.getCursor();
         const chapter = extractCurrentMarkdownChapter(markdown, cursor.line);
-        const analysis = new AiFlavorService().analyze(chapter);
+        new Notice('正在检查当前章节 AI 味...');
+        const analysis = await new AiFlavorService(this.createInspirationAiTextGenerator()).analyzeWithAi(chapter);
+        const modeLabel = analysis.mode === 'hybrid' ? '混合评审' : '本地评审';
         new Notice(
-          `当前章节 AI 味：${analysis.score}%（${analysis.level === 'low' ? '低' : analysis.level === 'medium' ? '中' : '高'}）。${analysis.reasons.join('、')}`,
+          `当前章节 AI 味：${analysis.score}%（${analysis.level === 'low' ? '低' : analysis.level === 'medium' ? '中' : '高'}，${modeLabel}）。${analysis.reasons.join('、')}`,
           8000,
         );
       },
