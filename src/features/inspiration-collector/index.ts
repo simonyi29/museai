@@ -1,3 +1,5 @@
+export * from './AiReportSynthesizer';
+export * from './AiTextGenerators';
 export * from './CreativeInspirationCollector';
 export * from './CreativeInspirationStorage';
 export * from './LightweightWebContextExtractor';

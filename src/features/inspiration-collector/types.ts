@@ -31,6 +31,13 @@ export interface ReportSynthesizer {
   }): Promise<string>;
 }
 
+export interface AiTextGenerator {
+  generate(input: {
+    systemPrompt: string;
+    prompt: string;
+  }): Promise<string>;
+}
+
 export interface CollectorStorage {
   writeReport(input: {
     saveDirectory: string;

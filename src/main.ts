@@ -33,17 +33,25 @@ import type { ChatViewPlacement, EnvironmentScope } from './core/types/settings'
 import { ClaudianView } from './features/chat/ClaudianView';
 import { type InlineEditContext, InlineEditModal } from './features/inline-edit/ui/InlineEditModal';
 import {
+  AiReportSynthesizer,
+  type AiTextGenerator,
+  AuxRunnerAiTextGenerator,
   CreativeInspirationCollector,
   CreativeInspirationStorage,
   LightweightWebContextExtractor,
   MarkdownReportSynthesizer,
   PublicWebSearchProvider,
+  type ReportSynthesizer,
   SourceCandidateService,
 } from './features/inspiration-collector';
 import { ClaudianSettingTab } from './features/settings/ClaudianSettings';
 import { setLocale } from './i18n/i18n';
 import type { Locale } from './i18n/types';
+import { runColdStartQuery } from './providers/claude/runtime/claudeColdStartQuery';
+import { CodexAuxQueryRunner } from './providers/codex/runtime/CodexAuxQueryRunner';
 import { OPENCODE_PLAN_MODE_ID, OPENCODE_SAFE_MODE_ID } from './providers/opencode/modes';
+import { OpencodeAuxQueryRunner } from './providers/opencode/runtime/OpencodeAuxQueryRunner';
+import { PiAuxQueryRunner } from './providers/pi/runtime/PiAuxQueryRunner';
 import { extractUserDisplayContent } from './utils/context';
 import { buildCursorContext } from './utils/editor';
 import { revealWorkspaceLeaf } from './utils/obsidianCompat';
@@ -60,7 +68,6 @@ export default class ClaudianPlugin extends Plugin {
   storage!: SharedAppStorage;
   private conversations: Conversation[] = [];
   private lastKnownTabManagerState: AppTabManagerState | null = null;
-  private inspirationCollector: CreativeInspirationCollector | null = null;
 
   async onload() {
     await this.loadSettings();
@@ -405,15 +412,12 @@ export default class ClaudianPlugin extends Plugin {
   }
 
   getInspirationCollector(): CreativeInspirationCollector {
-    if (!this.inspirationCollector) {
-      this.inspirationCollector = new CreativeInspirationCollector({
-        sourceService: new SourceCandidateService(new PublicWebSearchProvider()),
-        extractor: new LightweightWebContextExtractor(),
-        synthesizer: new MarkdownReportSynthesizer(),
-        storage: new CreativeInspirationStorage(this.storage.getAdapter()),
-      });
-    }
-    return this.inspirationCollector;
+    return new CreativeInspirationCollector({
+      sourceService: new SourceCandidateService(new PublicWebSearchProvider()),
+      extractor: new LightweightWebContextExtractor(),
+      synthesizer: this.createInspirationReportSynthesizer(),
+      storage: new CreativeInspirationStorage(this.storage.getAdapter()),
+    });
   }
 
   async runInspirationCollection(topic: string): Promise<{ filePath: string; sourceCount: number }> {
@@ -421,6 +425,77 @@ export default class ClaudianPlugin extends Plugin {
       topic,
       this.settings.creativeInspirationCollector,
     );
+  }
+
+  private createInspirationReportSynthesizer(): ReportSynthesizer {
+    const fallback = new MarkdownReportSynthesizer();
+    if (!this.settings.creativeInspirationCollector.aiSynthesisEnabled) {
+      return fallback;
+    }
+
+    return new AiReportSynthesizer(
+      this.createInspirationAiTextGenerator(),
+      fallback,
+    );
+  }
+
+  private createInspirationAiTextGenerator(): AiTextGenerator {
+    const providerId = ProviderRegistry.resolveSettingsProviderId(
+      this.settings as unknown as Record<string, unknown>,
+    );
+    const resolveModel = (): string | undefined => {
+      const snapshot = ProviderSettingsCoordinator.getProviderSettingsSnapshot(
+        this.settings as unknown as Record<string, unknown>,
+        providerId,
+      );
+      return typeof snapshot.model === 'string' ? snapshot.model : undefined;
+    };
+
+    if (providerId === 'claude') {
+      return {
+        generate: async ({ systemPrompt, prompt }) => {
+          const result = await runColdStartQuery({
+            plugin: this,
+            systemPrompt,
+            tools: [],
+            model: resolveModel(),
+            thinking: { disabled: true },
+            persistSession: false,
+          }, prompt);
+          return result.text;
+        },
+      };
+    }
+
+    if (providerId === 'codex') {
+      return new AuxRunnerAiTextGenerator(
+        new CodexAuxQueryRunner(this),
+        resolveModel,
+      );
+    }
+
+    if (providerId === 'opencode') {
+      return new AuxRunnerAiTextGenerator(
+        new OpencodeAuxQueryRunner(this, {
+          agentProfile: 'passive',
+          artifactPurpose: 'instructions',
+        }),
+        resolveModel,
+      );
+    }
+
+    if (providerId === 'pi') {
+      return new AuxRunnerAiTextGenerator(
+        new PiAuxQueryRunner(this, { profile: 'passive' }),
+        resolveModel,
+      );
+    }
+
+    return {
+      generate: async () => {
+        throw new Error(`Provider "${providerId}" does not support inspiration synthesis yet.`);
+      },
+    };
   }
 
   /** Updates and persists environment variables, restarting processes to apply changes. */
