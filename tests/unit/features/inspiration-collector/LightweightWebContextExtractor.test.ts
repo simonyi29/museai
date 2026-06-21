@@ -1,22 +1,21 @@
+import { requestUrl } from 'obsidian';
 import { LightweightWebContextExtractor } from '@/features/inspiration-collector/LightweightWebContextExtractor';
 
 describe('LightweightWebContextExtractor', () => {
-  const originalWindowFetch = window.fetch;
+  const requestUrlMock = requestUrl as jest.MockedFunction<typeof requestUrl>;
 
   afterEach(() => {
-    window.fetch = originalWindowFetch;
+    requestUrlMock.mockReset();
   });
 
-  it('uses window.fetch with the correct Window receiver by default', async () => {
-    window.fetch = jest.fn(function (this: Window) {
-      if (this !== window) {
-        throw new TypeError('Illegal invocation');
-      }
-      return Promise.resolve(new Response('<main>星际殖民与 AI 冲突。</main>', {
-        headers: { 'content-type': 'text/html' },
-        status: 200,
-      }));
-    }) as unknown as typeof fetch;
+  it('uses Obsidian requestUrl by default so page extraction bypasses renderer fetch limits', async () => {
+    requestUrlMock.mockResolvedValue({
+      arrayBuffer: new ArrayBuffer(0),
+      headers: { 'content-type': 'text/html' },
+      json: {},
+      status: 200,
+      text: '<main>星际殖民与 AI 冲突。</main>',
+    });
     const extractor = new LightweightWebContextExtractor();
 
     const result = await extractor.extract({
@@ -27,6 +26,10 @@ describe('LightweightWebContextExtractor', () => {
       sourceMode: 'open-search',
     });
 
+    expect(requestUrlMock).toHaveBeenCalledWith(expect.objectContaining({
+      method: 'GET',
+      url: 'https://example.com/scifi',
+    }));
     expect(result.text).toBe('星际殖民与 AI 冲突。');
   });
 });

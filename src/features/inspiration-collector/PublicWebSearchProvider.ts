@@ -1,3 +1,8 @@
+import {
+  type InspirationHttpClient,
+  isSuccessfulStatus,
+  obsidianHttpClient,
+} from './ObsidianHttpClient';
 import type { SourceCandidate, SourceSearchProvider } from './types';
 
 function extractDomain(url: string): string {
@@ -145,16 +150,9 @@ const SEARCH_ENDPOINTS: SearchEndpoint[] = [
 const timerHost: Pick<typeof globalThis, 'clearTimeout' | 'setTimeout'> =
   typeof window !== 'undefined' ? window : globalThis;
 
-const defaultFetch: typeof fetch = (input, init) => {
-  if (typeof window !== 'undefined') {
-    return window.fetch(input, init);
-  }
-  return fetch(input, init);
-};
-
 export class PublicWebSearchProvider implements SourceSearchProvider {
   constructor(
-    private readonly fetchImpl: typeof fetch = defaultFetch,
+    private readonly httpClient: InspirationHttpClient = obsidianHttpClient,
     private readonly requestTimeoutMs = 8_000,
   ) {}
 
@@ -187,26 +185,30 @@ export class PublicWebSearchProvider implements SourceSearchProvider {
   }
 
   private async fetchSearchHtml(url: string): Promise<string> {
-    const controller = new AbortController();
-    const timeout = timerHost.setTimeout(() => controller.abort(), this.requestTimeoutMs);
-    let response: Response;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      response = await this.fetchImpl(url, {
-        signal: controller.signal,
-        headers: {
-          Accept: 'text/html',
-          'User-Agent': 'Mozilla/5.0 MuseAI Inspiration Collector',
-        },
-      });
+      const response = await Promise.race([
+        this.httpClient.request(url, {
+          headers: {
+            Accept: 'text/html',
+            'User-Agent': 'Mozilla/5.0 MuseAI Inspiration Collector',
+          },
+        }),
+        new Promise<never>((_, reject) => {
+          timeout = timerHost.setTimeout(() => reject(new Error('Search request timed out')), this.requestTimeoutMs);
+        }),
+      ]);
+
+      if (!isSuccessfulStatus(response.status)) {
+        throw new Error(`Search request failed: ${response.status}`);
+      }
+
+      return response.text;
     } finally {
-      timerHost.clearTimeout(timeout);
+      if (timeout !== undefined) {
+        timerHost.clearTimeout(timeout);
+      }
     }
-
-    if (!response.ok) {
-      throw new Error(`Search request failed: ${response.status}`);
-    }
-
-    return response.text();
   }
 
   private matchesDomains(candidate: SourceCandidate, domains?: string[]): boolean {

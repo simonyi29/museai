@@ -1,3 +1,9 @@
+import {
+  getResponseHeader,
+  type InspirationHttpClient,
+  isSuccessfulStatus,
+  obsidianHttpClient,
+} from './ObsidianHttpClient';
 import type { ExtractedSourceContext, SourceCandidate, WebContextExtractor } from './types';
 
 function stripHtml(html: string): string {
@@ -16,31 +22,24 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-const defaultFetch: typeof fetch = (input, init) => {
-  if (typeof window !== 'undefined') {
-    return window.fetch(input, init);
-  }
-  return fetch(input, init);
-};
-
 export class LightweightWebContextExtractor implements WebContextExtractor {
   constructor(
-    private readonly fetchImpl: typeof fetch = defaultFetch,
+    private readonly httpClient: InspirationHttpClient = obsidianHttpClient,
     private readonly maxCharacters = 4_000,
   ) {}
 
   async extract(candidate: SourceCandidate): Promise<ExtractedSourceContext> {
-    const response = await this.fetchImpl(candidate.url, {
+    const response = await this.httpClient.request(candidate.url, {
       headers: {
         Accept: 'text/html,text/plain',
       },
     });
-    if (!response.ok) {
+    if (!isSuccessfulStatus(response.status)) {
       return candidate;
     }
 
-    const contentType = response.headers.get('content-type') ?? '';
-    const rawText = await response.text();
+    const contentType = getResponseHeader(response, 'content-type') ?? '';
+    const rawText = response.text;
     const text = contentType.includes('text/html')
       ? stripHtml(rawText)
       : rawText.replace(/\s+/gu, ' ').trim();

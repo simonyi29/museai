@@ -266,6 +266,8 @@ export const setIcon = jest.fn();
 // Notice mock that tracks constructor calls
 export const Notice = jest.fn().mockImplementation((_message: string, _timeout?: number) => {});
 
+export const requestUrl = jest.fn();
+
 function unquoteYaml(value: string): string {
   if (
     (value.startsWith('"') && value.endsWith('"')) ||
