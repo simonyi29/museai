@@ -12,18 +12,19 @@ const source = {
 };
 
 describe('AiReportSynthesizer', () => {
-  it('asks the AI generator to synthesize sources into the report template', async () => {
+  it('uses the fixed report template and only fills sections from AI output', async () => {
     const generator = {
       generate: jest.fn().mockResolvedValue([
+        '好的，MuseAI 创作灵感素材库助手已就位。',
         '# 科幻素材采集 - 2026-06-21',
         '',
         '## 主题概览',
         '',
         'AI 生成的概览。',
         '',
-        '## 来源索引',
+        '## 高频设定',
         '',
-        '- [AI colonies](https://example.com/a) - example.com',
+        '- 星际殖民与 AI 自主意识反复出现。',
       ].join('\n')),
     };
     const synthesizer = new AiReportSynthesizer(generator, new MarkdownReportSynthesizer());
@@ -36,9 +37,15 @@ describe('AiReportSynthesizer', () => {
 
     expect(generator.generate).toHaveBeenCalledTimes(1);
     expect(generator.generate.mock.calls[0][0].systemPrompt).toContain('创作灵感素材库');
+    expect(generator.generate.mock.calls[0][0].systemPrompt).toContain('不要输出开场白');
     expect(generator.generate.mock.calls[0][0].prompt).toContain('AI colonies');
     expect(generator.generate.mock.calls[0][0].prompt).toContain('公开页面摘要');
-    expect(markdown).toContain('AI 生成的概览。');
+    expect(markdown.startsWith('# 科幻素材采集 - 2026-06-21')).toBe(true);
+    expect(markdown).not.toContain('好的，MuseAI 创作灵感素材库助手已就位。');
+    expect(markdown.match(/^# /gmu)).toHaveLength(1);
+    expect(markdown).toContain('## 主题概览\n\nAI 生成的概览。');
+    expect(markdown).toContain('## 高频设定\n\n- 星际殖民与 AI 自主意识反复出现。');
+    expect(markdown).toContain('## 可发展灵感\n\n- 待 AI 提炼。');
     expect(markdown).toContain('- [AI colonies](https://example.com/a) - example.com');
   });
 
