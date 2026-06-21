@@ -117,6 +117,8 @@ describe('ClaudianPlugin', () => {
 
       expect(getRegisteredCommand('open-view').name).toBe('Open MuseAI');
       expect(getRegisteredCommand('inline-edit').name).toBe('MuseAI: Inline edit');
+      expect(getRegisteredCommand('check-ai-flavor').name).toBe('MuseAI: 检查当前章节 AI 味');
+      expect(getRegisteredCommand('rewrite-selection-ai-flavor').name).toBe('MuseAI: 去 AI 味改写选中文本');
       expect(getRegisteredCommand('new-tab').name).toBe('MuseAI: New tab');
       expect(getRegisteredCommand('new-session').name).toBe('MuseAI: New session in current tab');
       expect(getRegisteredCommand('close-current-tab').name).toBe('MuseAI: Close current tab');

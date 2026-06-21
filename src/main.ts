@@ -31,6 +31,7 @@ import {
 } from './core/types';
 import type { ChatViewPlacement, EnvironmentScope } from './core/types/settings';
 import { ClaudianView } from './features/chat/ClaudianView';
+import { AiFlavorService, extractCurrentMarkdownChapter } from './features/ai-flavor/AiFlavorService';
 import { type InlineEditContext, InlineEditModal } from './features/inline-edit/ui/InlineEditModal';
 import {
   AiReportSynthesizer,
@@ -133,6 +134,50 @@ export default class ClaudianPlugin extends Plugin {
 
         if (result.decision === 'accept' && result.editedText !== undefined) {
           new Notice(editContext.mode === 'cursor' ? 'Inserted' : 'Edit applied');
+        }
+      },
+    });
+
+    this.addCommand({
+      id: 'check-ai-flavor',
+      name: 'MuseAI: 检查当前章节 AI 味',
+      editorCallback: (editor: Editor) => {
+        const markdown = typeof editor.getValue === 'function'
+          ? editor.getValue()
+          : Array.from({ length: editor.lineCount() }, (_, line) => editor.getLine(line)).join('\n');
+        const cursor = editor.getCursor();
+        const chapter = extractCurrentMarkdownChapter(markdown, cursor.line);
+        const analysis = new AiFlavorService().analyze(chapter);
+        new Notice(
+          `当前章节 AI 味：${analysis.score}%（${analysis.level === 'low' ? '低' : analysis.level === 'medium' ? '中' : '高'}）。${analysis.reasons.join('、')}`,
+          8000,
+        );
+      },
+    });
+
+    this.addCommand({
+      id: 'rewrite-selection-ai-flavor',
+      name: 'MuseAI: 去 AI 味改写选中文本',
+      editorCallback: async (editor: Editor) => {
+        const selectedText = editor.getSelection();
+        if (!selectedText.trim()) {
+          new Notice('请先选中需要去 AI 味改写的文本。');
+          return;
+        }
+
+        try {
+          const before = new AiFlavorService().analyze(selectedText);
+          new Notice(`开始去 AI 味改写：当前 ${before.score}%，目标 30% 以下。`);
+          const service = new AiFlavorService(this.createInspirationAiTextGenerator());
+          const result = await service.rewriteBelowTarget(selectedText, { targetScore: 30, maxAttempts: 3 });
+          editor.replaceSelection(result.text);
+          const suffix = result.score <= 30
+            ? `已降到 ${result.score}%`
+            : `已尽量降低到 ${result.score}%，建议人工再润色`;
+          new Notice(`去 AI 味改写完成：${suffix}。`);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          new Notice(`去 AI 味改写失败：${message}`);
         }
       },
     });
