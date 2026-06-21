@@ -22,6 +22,44 @@ describe('AiFlavorService', () => {
     expect(service.analyze(natural).score).toBeLessThan(30);
   });
 
+  it('detects density problems even when no single sentence is catastrophic', () => {
+    const service = new AiFlavorService();
+    const smoothButArtificial = [
+      '他看着门口，没有马上回答，只是抬眼扫过那张表。',
+      '她沉默片刻，心里一沉，手指在杯沿停了一下。',
+      '这意味着局面已经发生变化，本质上，他们没有更多选择。',
+      '他看了她一眼，又盯着屏幕，像是在等待一个解释。',
+    ].join('\n');
+
+    const analysis = service.analyze(smoothButArtificial);
+
+    expect(analysis.score).toBeGreaterThanOrEqual(30);
+    expect(analysis.reasons).toEqual(expect.arrayContaining([
+      '缓冲动作密度偏高',
+      '抽象判断密度偏高',
+      '同类动作重复偏多',
+    ]));
+  });
+
+  it('detects rhythm that is too smooth and explanatory for a fiction scene', () => {
+    const service = new AiFlavorService();
+    const overlySmoothScene = [
+      '雨声落在窗外，房间里的灯光保持着稳定的亮度，他看着桌面，心里明白这意味着新的风险。',
+      '风从门缝里进来，她抬眼看着对方，本质上，这场谈话已经不只是误会，而是选择。',
+      '走廊尽头传来脚步声，他没有马上回答，因为这说明他们必须重新判断彼此的位置。',
+      '玻璃映出两个人的影子，她沉默片刻，换句话说，他们都知道局面已经改变。',
+    ].join('\n\n');
+
+    const analysis = service.analyze(overlySmoothScene);
+
+    expect(analysis.score).toBeGreaterThanOrEqual(30);
+    expect(analysis.reasons).toEqual(expect.arrayContaining([
+      '段落长度过于均匀',
+      '连续段落结构过于相似',
+      '解释型对话或旁白偏多',
+    ]));
+  });
+
   it('rewrites selected text until the local AI-flavor score is below the target', async () => {
     const generator = {
       generate: jest.fn()
