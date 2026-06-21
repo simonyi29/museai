@@ -32,6 +32,14 @@ import {
 import type { ChatViewPlacement, EnvironmentScope } from './core/types/settings';
 import { ClaudianView } from './features/chat/ClaudianView';
 import { type InlineEditContext, InlineEditModal } from './features/inline-edit/ui/InlineEditModal';
+import {
+  CreativeInspirationCollector,
+  CreativeInspirationStorage,
+  LightweightWebContextExtractor,
+  MarkdownReportSynthesizer,
+  PublicWebSearchProvider,
+  SourceCandidateService,
+} from './features/inspiration-collector';
 import { ClaudianSettingTab } from './features/settings/ClaudianSettings';
 import { setLocale } from './i18n/i18n';
 import type { Locale } from './i18n/types';
@@ -52,6 +60,7 @@ export default class ClaudianPlugin extends Plugin {
   storage!: SharedAppStorage;
   private conversations: Conversation[] = [];
   private lastKnownTabManagerState: AppTabManagerState | null = null;
+  private inspirationCollector: CreativeInspirationCollector | null = null;
 
   async onload() {
     await this.loadSettings();
@@ -393,6 +402,25 @@ export default class ClaudianPlugin extends Plugin {
     );
 
     await this.storage.saveClaudianSettings(this.settings);
+  }
+
+  getInspirationCollector(): CreativeInspirationCollector {
+    if (!this.inspirationCollector) {
+      this.inspirationCollector = new CreativeInspirationCollector({
+        sourceService: new SourceCandidateService(new PublicWebSearchProvider()),
+        extractor: new LightweightWebContextExtractor(),
+        synthesizer: new MarkdownReportSynthesizer(),
+        storage: new CreativeInspirationStorage(this.storage.getAdapter()),
+      });
+    }
+    return this.inspirationCollector;
+  }
+
+  async runInspirationCollection(topic: string): Promise<{ filePath: string; sourceCount: number }> {
+    return this.getInspirationCollector().collect(
+      topic,
+      this.settings.creativeInspirationCollector,
+    );
   }
 
   /** Updates and persists environment variables, restarting processes to apply changes. */
